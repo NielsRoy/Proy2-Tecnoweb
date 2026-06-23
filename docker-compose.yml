@@ -1,0 +1,28 @@
+# Base de datos PostgreSQL 16 para desarrollo local (Grupo25sa - Tienda D & D)
+# Uso:
+#   docker compose up -d        -> levanta la BD en segundo plano
+#   docker compose down         -> detiene (los datos persisten en el volumen)
+#   docker compose down -v      -> detiene Y borra los datos
+#
+# Conexion desde Laravel (.env): host=127.0.0.1  puerto=5432
+services:
+  db:
+    image: postgres:16
+    container_name: tiendadyd_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: db_grupo25sa
+      POSTGRES_USER: grupo25sa
+      POSTGRES_PASSWORD: "grup025grup025*"
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata_grupo25sa:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U grupo25sa -d db_grupo25sa"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata_grupo25sa:
