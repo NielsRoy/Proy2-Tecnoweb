@@ -20,7 +20,7 @@ declare module '@inertiajs/core' {
             auth: Auth;
             sidebarOpen: boolean;
             // Visitas (vistas) de la pagina actual; null si la peticion no se cuenta.
-            pageVisits: number | null;
+            visitasPagina: number | null;
             [key: string]: unknown;
         };
     }

@@ -11,11 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('page_visits', function (Blueprint $table) {
+        Schema::create('visitas_pagina', function (Blueprint $table) {
             $table->id();
             // Identificador de la pagina: nombre de ruta (o path como fallback).
-            $table->string('route')->unique();
-            $table->unsignedBigInteger('visits')->default(0);
+            $table->string('ruta')->unique();
+            $table->unsignedBigInteger('visitas')->default(0);
             $table->timestamps();
         });
     }
@@ -25,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('page_visits');
+        Schema::dropIfExists('visitas_pagina');
     }
 };
