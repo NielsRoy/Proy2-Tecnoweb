@@ -2,6 +2,7 @@ import { createInertiaApp } from '@inertiajs/vue3';
 import { initializeTheme } from '@/composables/useAppearance';
 import { initializeContrast } from '@/composables/useContrast';
 import { initializeFontSize } from '@/composables/useFontSize';
+import { initializeTheme as initializeAgeTheme } from '@/composables/useTheme';
 import AppLayout from '@/layouts/AppLayout.vue';
 import AuthLayout from '@/layouts/AuthLayout.vue';
 import SettingsLayout from '@/layouts/settings/Layout.vue';
@@ -36,6 +37,9 @@ initializeFontSize();
 
 // This will set the high-contrast accessibility mode on page load...
 initializeContrast();
+
+// This will set the age theme (color palette + font) on page load...
+initializeAgeTheme();
 
 // This will listen for flash toast data from the server...
 initializeFlashToast();

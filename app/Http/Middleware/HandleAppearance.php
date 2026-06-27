@@ -19,6 +19,8 @@ class HandleAppearance
         View::share('appearance', $request->cookie('appearance') ?? 'system');
         View::share('fontSize', $request->cookie('fontSize') ?? 'base');
         View::share('contrast', $request->cookie('contrast') ?? 'normal');
+        View::share('palette', $request->cookie('palette') ?? 'adultos');
+        View::share('font', $request->cookie('font') ?? 'instrument');
 
         return $next($request);
     }

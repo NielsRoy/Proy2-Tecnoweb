@@ -10,6 +10,14 @@ export type FontSize = 'sm' | 'base' | 'lg' | 'xl';
 // tema día/noche: el alto contraste tiene su variante para claro y para oscuro.
 export type Contrast = 'normal' | 'high';
 
+// Temas por edad. Un tema = una paleta de colores + una fuente. El tamaño de letra
+// (FontSize) es ortogonal y se ajusta en Accesibilidad; día/noche y alto contraste se
+// aplican encima de cualquier tema.
+export type Palette = 'ninos' | 'jovenes' | 'adultos';
+export type FontFamily = 'fredoka' | 'poppins' | 'instrument';
+// 'custom' = combinación (paleta, fuente) que no coincide con ningún preset de edad.
+export type Theme = 'ninos' | 'jovenes' | 'adultos' | 'custom';
+
 export type AppVariant = 'header' | 'sidebar';
 
 export type FlashToast = {

@@ -32,6 +32,10 @@
                 // Accesibilidad: aplica el alto contraste guardado antes de pintar.
                 const contrast = '{{ $contrast ?? "normal" }}';
                 document.documentElement.dataset.contrast = contrast;
+
+                // Tema por edad: aplica paleta de colores y fuente antes de pintar.
+                document.documentElement.dataset.palette = '{{ $palette ?? "adultos" }}';
+                document.documentElement.dataset.font = '{{ $font ?? "instrument" }}';
             })();
         </script>
 

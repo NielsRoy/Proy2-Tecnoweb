@@ -162,6 +162,187 @@
     --sidebar: hsl(240 5.9% 10%);
 }
 
+/*
+  Temas por edad — PALETAS de color.
+  Un tema = paleta (data-palette) + fuente (data-font). 'adultos' es el default
+  (los valores neutros de :root / .dark de arriba), por eso no necesita bloque.
+  Aquí van 'ninos' (cálido, saturado, más redondeado) y 'jovenes' (frío, vibrante,
+  índigo/violeta), cada una con su variante clara y su variante oscura (.dark).
+  IMPORTANTE: estos bloques deben quedar ANTES de la sección de alto contraste, que
+  fuerza blanco/negro puro y, por orden + especificidad, gana sobre cualquier paleta.
+*/
+html[data-palette='ninos'] {
+    --background: hsl(48 100% 97%);
+    --foreground: hsl(25 40% 18%);
+    --card: hsl(0 0% 100%);
+    --card-foreground: hsl(25 40% 18%);
+    --popover: hsl(0 0% 100%);
+    --popover-foreground: hsl(25 40% 18%);
+    --primary: hsl(204 88% 48%);
+    --primary-foreground: hsl(0 0% 100%);
+    --secondary: hsl(48 96% 88%);
+    --secondary-foreground: hsl(25 45% 22%);
+    --muted: hsl(46 80% 93%);
+    --muted-foreground: hsl(28 25% 38%);
+    --accent: hsl(196 85% 90%);
+    --accent-foreground: hsl(205 80% 25%);
+    --destructive: hsl(2 80% 56%);
+    --destructive-foreground: hsl(0 0% 100%);
+    --border: hsl(42 60% 84%);
+    --input: hsl(42 55% 80%);
+    --ring: hsl(204 88% 48%);
+    --chart-1: hsl(204 88% 52%);
+    --chart-2: hsl(150 65% 45%);
+    --chart-3: hsl(35 95% 55%);
+    --chart-4: hsl(330 80% 62%);
+    --chart-5: hsl(265 75% 62%);
+    --radius: 0.85rem;
+    --sidebar-background: hsl(204 80% 95%);
+    --sidebar-foreground: hsl(25 40% 22%);
+    --sidebar-primary: hsl(204 88% 48%);
+    --sidebar-primary-foreground: hsl(0 0% 100%);
+    --sidebar-accent: hsl(204 75% 88%);
+    --sidebar-accent-foreground: hsl(205 80% 25%);
+    --sidebar-border: hsl(204 45% 84%);
+    --sidebar-ring: hsl(204 88% 48%);
+    --sidebar: hsl(204 80% 95%);
+}
+
+html[data-palette='ninos'].dark {
+    --background: hsl(218 35% 12%);
+    --foreground: hsl(48 100% 95%);
+    --card: hsl(218 32% 15%);
+    --card-foreground: hsl(48 100% 95%);
+    --popover: hsl(218 32% 15%);
+    --popover-foreground: hsl(48 100% 95%);
+    --primary: hsl(204 90% 60%);
+    --primary-foreground: hsl(218 40% 10%);
+    --secondary: hsl(218 26% 22%);
+    --secondary-foreground: hsl(48 100% 95%);
+    --muted: hsl(218 24% 20%);
+    --muted-foreground: hsl(46 35% 75%);
+    --accent: hsl(204 40% 26%);
+    --accent-foreground: hsl(196 90% 85%);
+    --destructive: hsl(2 78% 60%);
+    --destructive-foreground: hsl(0 0% 100%);
+    --border: hsl(218 22% 26%);
+    --input: hsl(218 22% 26%);
+    --ring: hsl(204 90% 60%);
+    --chart-1: hsl(204 88% 60%);
+    --chart-2: hsl(150 60% 50%);
+    --chart-3: hsl(35 90% 60%);
+    --chart-4: hsl(330 78% 66%);
+    --chart-5: hsl(265 75% 68%);
+    --sidebar-background: hsl(218 38% 10%);
+    --sidebar-foreground: hsl(48 100% 94%);
+    --sidebar-primary: hsl(204 90% 60%);
+    --sidebar-primary-foreground: hsl(218 40% 10%);
+    --sidebar-accent: hsl(218 28% 20%);
+    --sidebar-accent-foreground: hsl(196 90% 85%);
+    --sidebar-border: hsl(218 24% 22%);
+    --sidebar-ring: hsl(204 90% 60%);
+    --sidebar: hsl(218 38% 10%);
+}
+
+html[data-palette='jovenes'] {
+    --background: hsl(240 30% 99%);
+    --foreground: hsl(245 30% 14%);
+    --card: hsl(0 0% 100%);
+    --card-foreground: hsl(245 30% 14%);
+    --popover: hsl(0 0% 100%);
+    --popover-foreground: hsl(245 30% 14%);
+    --primary: hsl(255 83% 58%);
+    --primary-foreground: hsl(0 0% 100%);
+    --secondary: hsl(255 45% 95%);
+    --secondary-foreground: hsl(255 50% 30%);
+    --muted: hsl(245 30% 96%);
+    --muted-foreground: hsl(245 15% 45%);
+    --accent: hsl(270 75% 95%);
+    --accent-foreground: hsl(265 60% 35%);
+    --destructive: hsl(0 80% 60%);
+    --destructive-foreground: hsl(0 0% 100%);
+    --border: hsl(245 25% 90%);
+    --input: hsl(245 25% 88%);
+    --ring: hsl(255 83% 58%);
+    --chart-1: hsl(255 83% 60%);
+    --chart-2: hsl(190 85% 50%);
+    --chart-3: hsl(330 80% 60%);
+    --chart-4: hsl(160 70% 45%);
+    --chart-5: hsl(40 95% 58%);
+    --radius: 0.625rem;
+    --sidebar-background: hsl(255 45% 97%);
+    --sidebar-foreground: hsl(245 30% 18%);
+    --sidebar-primary: hsl(255 83% 58%);
+    --sidebar-primary-foreground: hsl(0 0% 100%);
+    --sidebar-accent: hsl(255 55% 92%);
+    --sidebar-accent-foreground: hsl(265 60% 35%);
+    --sidebar-border: hsl(250 35% 89%);
+    --sidebar-ring: hsl(255 83% 58%);
+    --sidebar: hsl(255 45% 97%);
+}
+
+html[data-palette='jovenes'].dark {
+    --background: hsl(250 28% 10%);
+    --foreground: hsl(245 25% 95%);
+    --card: hsl(250 25% 13%);
+    --card-foreground: hsl(245 25% 95%);
+    --popover: hsl(250 25% 13%);
+    --popover-foreground: hsl(245 25% 95%);
+    --primary: hsl(255 90% 70%);
+    --primary-foreground: hsl(250 30% 10%);
+    --secondary: hsl(250 22% 20%);
+    --secondary-foreground: hsl(245 25% 95%);
+    --muted: hsl(250 20% 18%);
+    --muted-foreground: hsl(245 18% 70%);
+    --accent: hsl(265 40% 26%);
+    --accent-foreground: hsl(270 80% 88%);
+    --destructive: hsl(0 78% 62%);
+    --destructive-foreground: hsl(0 0% 100%);
+    --border: hsl(250 20% 24%);
+    --input: hsl(250 20% 24%);
+    --ring: hsl(255 90% 70%);
+    --chart-1: hsl(255 85% 68%);
+    --chart-2: hsl(190 80% 55%);
+    --chart-3: hsl(330 78% 64%);
+    --chart-4: hsl(160 65% 50%);
+    --chart-5: hsl(40 90% 60%);
+    --sidebar-background: hsl(250 30% 8%);
+    --sidebar-foreground: hsl(245 25% 94%);
+    --sidebar-primary: hsl(255 90% 70%);
+    --sidebar-primary-foreground: hsl(250 30% 10%);
+    --sidebar-accent: hsl(250 24% 18%);
+    --sidebar-accent-foreground: hsl(270 80% 88%);
+    --sidebar-border: hsl(250 20% 20%);
+    --sidebar-ring: hsl(255 90% 70%);
+    --sidebar: hsl(250 30% 8%);
+}
+
+/*
+  Temas por edad — FUENTES.
+  OJO: por `@theme inline`, la utilidad `.font-sans` queda con el stack de fuente
+  LITERAL (no `var(--font-sans)`), así que sobreescribir la variable NO sirve. Por
+  eso aquí se sobreescribe directamente `.font-sans` (la lleva <body> y casi todo el
+  UI). Reglas SIN @layer + mayor especificidad → ganan a la utilidad. Lo que no tiene
+  la clase hereda del <body>. Las familias las sirve la directiva @fonts (Bunny,
+  auto-hospedadas). 'instrument' es el default; explícito para el modo Personalizado.
+*/
+html[data-font='fredoka'] .font-sans {
+    font-family:
+        'Fredoka', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
+        'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+}
+html[data-font='poppins'] .font-sans {
+    font-family:
+        'Poppins', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
+        'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+}
+html[data-font='instrument'] .font-sans {
+    font-family:
+        'Instrument Sans', ui-sans-serif, system-ui, sans-serif,
+        'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
+        'Noto Color Emoji';
+}
+
 @layer base {
     * {
         @apply border-border outline-ring/50;

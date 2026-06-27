@@ -15,6 +15,13 @@ export default defineConfig({
                 bunny('Instrument Sans', {
                     weights: [400, 500, 600],
                 }),
+                // Fuentes de los temas por edad: Niños = Fredoka, Jóvenes = Poppins.
+                bunny('Fredoka', {
+                    weights: [400, 500, 600],
+                }),
+                bunny('Poppins', {
+                    weights: [400, 500, 600],
+                }),
             ],
         }),
         inertia(),
