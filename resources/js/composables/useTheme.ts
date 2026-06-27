@@ -27,7 +27,7 @@ const PRESETS: Record<
     { palette: Palette; font: FontFamily; fontSize: FontSize }
 > = {
     ninos: { palette: 'ninos', font: 'fredoka', fontSize: 'lg' },
-    jovenes: { palette: 'jovenes', font: 'poppins', fontSize: 'base' },
+    jovenes: { palette: 'jovenes', font: 'poppins', fontSize: 'sm' },
     adultos: { palette: 'adultos', font: 'instrument', fontSize: 'base' },
 };
 
