@@ -10,24 +10,32 @@ export type UseAppearanceReturn = {
     updateAppearance: (value: Appearance) => void;
 };
 
+// Horario nocturno del modo 'schedule': de 19:00 a 06:59 se usa el tema oscuro.
+const NIGHT_START_HOUR = 19;
+const NIGHT_END_HOUR = 7;
+
+export function isNightTime(date = new Date()): boolean {
+    const hour = date.getHours();
+
+    return hour >= NIGHT_START_HOUR || hour < NIGHT_END_HOUR;
+}
+
 export function updateTheme(value: Appearance): void {
     if (typeof window === 'undefined') {
         return;
     }
 
-    if (value === 'system') {
-        const mediaQueryList = window.matchMedia(
-            '(prefers-color-scheme: dark)',
-        );
-        const systemTheme = mediaQueryList.matches ? 'dark' : 'light';
+    let isDark: boolean;
 
-        document.documentElement.classList.toggle(
-            'dark',
-            systemTheme === 'dark',
-        );
+    if (value === 'system') {
+        isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    } else if (value === 'schedule') {
+        isDark = isNightTime();
     } else {
-        document.documentElement.classList.toggle('dark', value === 'dark');
+        isDark = value === 'dark';
     }
+
+    document.documentElement.classList.toggle('dark', isDark);
 }
 
 const setCookie = (name: string, value: string, days = 365) => {
@@ -70,6 +78,13 @@ const handleSystemThemeChange = () => {
     updateTheme(currentAppearance || 'system');
 };
 
+// Reaplica el tema en modo 'schedule' (al cruzar la hora límite o al volver a la pestaña).
+const handleScheduleThemeChange = () => {
+    if (getStoredAppearance() === 'schedule') {
+        updateTheme('schedule');
+    }
+};
+
 export function initializeTheme(): void {
     if (typeof window === 'undefined') {
         return;
@@ -81,6 +96,10 @@ export function initializeTheme(): void {
 
     // Set up system theme change listener...
     mediaQuery()?.addEventListener('change', handleSystemThemeChange);
+
+    // En modo 'schedule', reevalúa la hora cada minuto y al volver a la pestaña...
+    window.setInterval(handleScheduleThemeChange, 60 * 1000);
+    document.addEventListener('visibilitychange', handleScheduleThemeChange);
 }
 
 const appearance = ref<Appearance>('system');
@@ -99,6 +118,10 @@ export function useAppearance(): UseAppearanceReturn {
     const resolvedAppearance = computed<ResolvedAppearance>(() => {
         if (appearance.value === 'system') {
             return prefersDark() ? 'dark' : 'light';
+        }
+
+        if (appearance.value === 'schedule') {
+            return isNightTime() ? 'dark' : 'light';
         }
 
         return appearance.value;

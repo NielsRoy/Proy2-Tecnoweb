@@ -4,17 +4,25 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        {{-- Inline script to detect system dark mode preference and apply it immediately --}}
+        {{-- Inline script: aplica el tema oscuro de inmediato (evita parpadeo) según la preferencia guardada --}}
         <script>
             (function() {
                 const appearance = '{{ $appearance ?? "system" }}';
 
-                if (appearance === 'system') {
-                    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                let isDark = false;
 
-                    if (prefersDark) {
-                        document.documentElement.classList.add('dark');
-                    }
+                if (appearance === 'system') {
+                    isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                } else if (appearance === 'schedule') {
+                    // Modo 'Horario': oscuro de 19:00 a 06:59 según la hora del dispositivo.
+                    const hour = new Date().getHours();
+                    isDark = hour >= 19 || hour < 7;
+                } else {
+                    isDark = appearance === 'dark';
+                }
+
+                if (isDark) {
+                    document.documentElement.classList.add('dark');
                 }
             })();
         </script>
