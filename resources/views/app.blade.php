@@ -24,6 +24,14 @@
                 if (isDark) {
                     document.documentElement.classList.add('dark');
                 }
+
+                // Accesibilidad: aplica el tamaño de letra guardado antes de pintar (evita salto).
+                const fontSize = '{{ $fontSize ?? "base" }}';
+                document.documentElement.dataset.fontSize = fontSize;
+
+                // Accesibilidad: aplica el alto contraste guardado antes de pintar.
+                const contrast = '{{ $contrast ?? "normal" }}';
+                document.documentElement.dataset.contrast = contrast;
             })();
         </script>
 

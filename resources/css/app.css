@@ -170,3 +170,98 @@
         @apply bg-background text-foreground;
     }
 }
+
+/*
+  Accesibilidad — tamaño de letra.
+  Se cambia el font-size de la raíz (<html>); como Tailwind v4 usa unidades rem,
+  todo el UI (texto, espaciados, anchos, mensajes de validación) escala junto.
+  El valor lo fija data-font-size, que aplica el composable useFontSize y el
+  script anti-parpadeo de app.blade.php. 'base' = 16px es el tamaño por defecto.
+*/
+html {
+    font-size: 100%;
+}
+html[data-font-size='sm'] {
+    font-size: 87.5%; /* 14px */
+}
+html[data-font-size='base'] {
+    font-size: 100%; /* 16px */
+}
+html[data-font-size='lg'] {
+    font-size: 112.5%; /* 18px */
+}
+html[data-font-size='xl'] {
+    font-size: 125%; /* 20px */
+}
+
+/*
+  Accesibilidad — alto contraste.
+  Activado con data-contrast='high' en <html> (composable useContrast + script
+  anti-parpadeo de app.blade.php). Es ortogonal al tema: hay una variante para
+  modo claro y otra para modo noche (.dark). Sobreescribe las variables de color
+  con valores de máximo contraste (negro/blanco puro, bordes fuertes, texto
+  "muted" legible). La especificidad (html + atributo, y .dark añadido) gana a
+  los bloques :root y .dark de arriba. Cuando agreguemos los temas por edad,
+  bastará añadir aquí su variante de alto contraste.
+*/
+html[data-contrast='high'] {
+    --background: hsl(0 0% 100%);
+    --foreground: hsl(0 0% 0%);
+    --card: hsl(0 0% 100%);
+    --card-foreground: hsl(0 0% 0%);
+    --popover: hsl(0 0% 100%);
+    --popover-foreground: hsl(0 0% 0%);
+    --primary: hsl(0 0% 0%);
+    --primary-foreground: hsl(0 0% 100%);
+    --secondary: hsl(0 0% 85%);
+    --secondary-foreground: hsl(0 0% 0%);
+    --muted: hsl(0 0% 90%);
+    --muted-foreground: hsl(0 0% 0%);
+    --accent: hsl(0 0% 85%);
+    --accent-foreground: hsl(0 0% 0%);
+    --destructive: hsl(0 100% 35%);
+    --destructive-foreground: hsl(0 0% 100%);
+    --border: hsl(0 0% 0%);
+    --input: hsl(0 0% 0%);
+    --ring: hsl(0 0% 0%);
+    --sidebar-background: hsl(0 0% 100%);
+    --sidebar-foreground: hsl(0 0% 0%);
+    --sidebar-primary: hsl(0 0% 0%);
+    --sidebar-primary-foreground: hsl(0 0% 100%);
+    --sidebar-accent: hsl(0 0% 85%);
+    --sidebar-accent-foreground: hsl(0 0% 0%);
+    --sidebar-border: hsl(0 0% 0%);
+    --sidebar-ring: hsl(0 0% 0%);
+    --sidebar: hsl(0 0% 100%);
+}
+
+html[data-contrast='high'].dark {
+    --background: hsl(0 0% 0%);
+    --foreground: hsl(0 0% 100%);
+    --card: hsl(0 0% 0%);
+    --card-foreground: hsl(0 0% 100%);
+    --popover: hsl(0 0% 0%);
+    --popover-foreground: hsl(0 0% 100%);
+    --primary: hsl(0 0% 100%);
+    --primary-foreground: hsl(0 0% 0%);
+    --secondary: hsl(0 0% 20%);
+    --secondary-foreground: hsl(0 0% 100%);
+    --muted: hsl(0 0% 18%);
+    --muted-foreground: hsl(0 0% 100%);
+    --accent: hsl(0 0% 20%);
+    --accent-foreground: hsl(0 0% 100%);
+    --destructive: hsl(0 100% 65%);
+    --destructive-foreground: hsl(0 0% 0%);
+    --border: hsl(0 0% 100%);
+    --input: hsl(0 0% 100%);
+    --ring: hsl(0 0% 100%);
+    --sidebar-background: hsl(0 0% 0%);
+    --sidebar-foreground: hsl(0 0% 100%);
+    --sidebar-primary: hsl(0 0% 100%);
+    --sidebar-primary-foreground: hsl(0 0% 0%);
+    --sidebar-accent: hsl(0 0% 20%);
+    --sidebar-accent-foreground: hsl(0 0% 100%);
+    --sidebar-border: hsl(0 0% 100%);
+    --sidebar-ring: hsl(0 0% 100%);
+    --sidebar: hsl(0 0% 0%);
+}
