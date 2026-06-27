@@ -265,3 +265,62 @@ html[data-contrast='high'].dark {
     --sidebar-ring: hsl(0 0% 100%);
     --sidebar: hsl(0 0% 0%);
 }
+
+/*
+  Alto contraste — refuerzos estructurales.
+  En contraste normal la separación entre zonas se logra con SOMBRAS y fondos
+  sutiles; en alto contraste todo va a blanco/negro puro y esas sombras se pierden.
+  Aquí la separación se rehace con BORDES y se corrigen los elementos que no usaban
+  las variables de tema (grupos de botones con colores neutral-*) o que atenuaban el
+  texto/borde con opacidad /70 (sidebar y header), que en HC se veía gris.
+*/
+
+/* 1) Separación sidebar ↔ contenido y tarjetas: bordes (no sombras). Grosor 1px,
+      el mismo del resto de bordes del UI (p. ej. la tarjeta del switch de contraste). */
+html[data-contrast='high'] [data-slot='sidebar-inset'],
+html[data-contrast='high'] [data-sidebar='sidebar'],
+html[data-contrast='high'] [data-slot='card'] {
+    border: 1px solid var(--border);
+}
+
+/* El sidebar principal lleva el mismo redondeo (rounded-xl) que el panel de contenido. */
+html[data-contrast='high'] [data-sidebar='sidebar'] {
+    border-radius: 0.75rem;
+}
+
+/* 2) Tono único: en HC no debe haber tonos intermedios. Se neutraliza la opacidad
+      /70 y /80 (texto y borde del sidebar y el header) que dejaba grises los blancos
+      /negros puros. Cubre group-label, los links del pie del sidebar y el header. */
+html[data-contrast='high'] .text-sidebar-foreground\/70 {
+    color: var(--sidebar-foreground);
+}
+html[data-contrast='high'] .border-sidebar-border\/70,
+html[data-contrast='high'] .border-sidebar-border\/80 {
+    border-color: var(--sidebar-border);
+}
+
+/* 3) Grupos de botones (tema / tamaño de letra): usaban colores fijos neutral-*. */
+html[data-contrast='high'] [data-slot='toggle-tabs'] {
+    border: 1px solid var(--border);
+    background-color: var(--background);
+}
+html[data-contrast='high'] [data-slot='toggle-tabs'] > button {
+    color: var(--foreground);
+}
+html[data-contrast='high'] [data-slot='toggle-tabs'] > button[data-active='true'] {
+    background-color: var(--primary);
+    color: var(--primary-foreground);
+    box-shadow: none;
+}
+
+/* 4) Items activos de los sidebars (principal y de configuración): relleno sólido
+      de alto contraste, igual que los grupos de botones, en vez del gris atenuado
+      (sidebar-accent / muted) que casi no se distinguía del fondo. */
+html[data-contrast='high'] [data-sidebar='menu-button'][data-active='true'] {
+    background-color: var(--sidebar-primary);
+    color: var(--sidebar-primary-foreground);
+}
+html[data-contrast='high'] [data-slot='settings-nav'] .bg-muted {
+    background-color: var(--primary);
+    color: var(--primary-foreground);
+}
