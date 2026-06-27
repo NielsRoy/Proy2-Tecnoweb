@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\PageVisit;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -35,6 +36,15 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        // Contador de visitas por pagina (requisito #7). Inertia llama a share() una
+        // vez por render de pagina; se cuenta solo en GET reales (no en partial reloads,
+        // ni en POST/redirects de formularios), una visita = una vista de pagina.
+        $pageVisits = null;
+        if ($request->isMethod('GET') && ! $request->headers->has('X-Inertia-Partial-Data')) {
+            $route = $request->route()?->getName() ?? $request->path();
+            $pageVisits = PageVisit::record($route);
+        }
+
         return [
             ...parent::share($request),
             'name' => config('app.name'),
@@ -42,6 +52,7 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user(),
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+            'pageVisits' => $pageVisits,
         ];
     }
 }

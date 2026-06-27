@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import PageFooter from '@/components/PageFooter.vue';
 import { SidebarInset } from '@/components/ui/sidebar';
 import type { AppVariant } from '@/types';
 
@@ -17,6 +18,7 @@ const className = computed(() => props.class);
 <template>
     <SidebarInset v-if="props.variant === 'sidebar'" :class="className">
         <slot />
+        <PageFooter />
     </SidebarInset>
     <main
         v-else
@@ -24,5 +26,6 @@ const className = computed(() => props.class);
         :class="className"
     >
         <slot />
+        <PageFooter />
     </main>
 </template>

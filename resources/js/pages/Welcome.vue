@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
+import PageFooter from '@/components/PageFooter.vue';
 import { dashboard, login } from '@/routes';
 import { register } from '@/routes';
 </script>
@@ -439,5 +440,6 @@ import { register } from '@/routes';
             </main>
         </div>
         <div class="hidden h-14.5 lg:block"></div>
+        <PageFooter class="w-full" />
     </div>
 </template>
