@@ -18,11 +18,15 @@ use Inertia\Response;
 class AccesoController extends Controller
 {
     /** Rol que siempre conserva acceso total (no editable para no auto-bloquearse). */
-    private const ROL_SUPER = 'Administrador';
+    private const ROL_SUPER = 'Propietario';
 
     /** Muestra la matriz: roles, modulos con sus acciones, y las asignaciones actuales. */
-    public function matriz(): Response
+    public function matriz(Request $request): Response
     {
+        // ¿El usuario actual puede editar la matriz? Si solo tiene "ver matriz", la ve en
+        // modo solo-lectura (checkboxes deshabilitados y sin boton de guardar en el front).
+        $puedeEditar = $request->user()->tienePermiso('acceso', 'modificar');
+
         $roles = Rol::where('est', true)->orderBy('id')->get(['id', 'nombre', 'descripcion']);
 
         $modulos = Modulo::where('est', true)
@@ -55,6 +59,7 @@ class AccesoController extends Controller
                 ])->values(),
             ]),
             'asignaciones' => $asignaciones,
+            'puedeEditar' => $puedeEditar,
         ]);
     }
 
@@ -78,9 +83,43 @@ class AccesoController extends Controller
             }
 
             $accionIds = $datos['asignaciones'][$rol->id] ?? [];
+            $accionIds = $this->normalizarDependencias($accionIds);
             $rol->acciones()->sync($accionIds);          // reemplaza la fila completa del rol
         }
 
         return back()->with('success', 'Matriz de acceso actualizada.');
+    }
+
+    /**
+     * Garantiza coherencia: si un rol tiene una accion de escritura (registrar/modificar/
+     * eliminar) en un modulo, debe tener tambien su "listar" (no se puede editar sin ver).
+     * Es la misma regla que aplica el front, reforzada aqui por seguridad.
+     *
+     * @param  array<int, int>  $accionIds
+     * @return array<int, int>
+     */
+    private function normalizarDependencias(array $accionIds): array
+    {
+        if (empty($accionIds)) {
+            return [];
+        }
+
+        $seleccionadas = Accion::whereIn('id', $accionIds)->get(['id', 'modulo_id', 'clave']);
+
+        $modulosConEscritura = $seleccionadas
+            ->whereIn('clave', ['registrar', 'modificar', 'eliminar'])
+            ->pluck('modulo_id')->unique();
+
+        $ids = collect($accionIds);
+
+        if ($modulosConEscritura->isNotEmpty()) {
+            $ids = $ids->merge(
+                Accion::whereIn('modulo_id', $modulosConEscritura)
+                    ->where('clave', 'listar')->where('est', true)
+                    ->pluck('id'),
+            );
+        }
+
+        return $ids->unique()->values()->all();
     }
 }

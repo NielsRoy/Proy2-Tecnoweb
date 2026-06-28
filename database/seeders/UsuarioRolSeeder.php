@@ -15,7 +15,7 @@ class UsuarioRolSeeder extends Seeder
     public function run(): void
     {
         $usuarios = [
-            ['name' => 'Administrador', 'email' => 'admin@tiendadyd.com', 'rol' => 'Administrador'],
+            ['name' => 'Propietario', 'email' => 'propietario@tiendadyd.com', 'rol' => 'Propietario'],
             ['name' => 'Vendedor Demo', 'email' => 'vendedor@tiendadyd.com', 'rol' => 'Vendedor'],
             ['name' => 'Cliente Demo', 'email' => 'cliente@tiendadyd.com', 'rol' => 'Cliente'],
             ['name' => 'Proveedor Demo', 'email' => 'proveedor@tiendadyd.com', 'rol' => 'Proveedor'],

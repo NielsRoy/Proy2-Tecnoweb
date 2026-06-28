@@ -24,6 +24,8 @@ const props = defineProps<{
     modulos: ModuloItem[];
     // mapa rol_id => [accion_id, ...] con la matriz actual
     asignaciones: Record<number, number[]>;
+    // ¿el usuario actual puede editar? Si no, la matriz se ve en solo-lectura.
+    puedeEditar: boolean;
 }>();
 
 defineOptions({
@@ -41,6 +43,27 @@ props.roles.forEach((rol) => {
     seleccion[rol.id] = new Set(props.asignaciones[rol.id] ?? []);
 });
 
+// Acciones de escritura: tenerlas implica tener "listar" (ver) del mismo modulo.
+const ESCRITURA = ['registrar', 'modificar', 'eliminar'];
+
+// Lookups para resolver la dependencia "editar => ver" al togglear un checkbox.
+const infoAccion = new Map<number, { moduloId: number; clave: string }>();
+const listarDeModulo = new Map<number, number>(); // moduloId => accion "listar"
+const escriturasDeModulo = new Map<number, number[]>(); // moduloId => [acciones de escritura]
+props.modulos.forEach((modulo) => {
+    const escrituras: number[] = [];
+    modulo.acciones.forEach((accion) => {
+        infoAccion.set(accion.id, { moduloId: modulo.id, clave: accion.clave });
+        if (accion.clave === 'listar') {
+            listarDeModulo.set(modulo.id, accion.id);
+        }
+        if (ESCRITURA.includes(accion.clave)) {
+            escrituras.push(accion.id);
+        }
+    });
+    escriturasDeModulo.set(modulo.id, escrituras);
+});
+
 function estaMarcado(rolId: number, accionId: number): boolean {
     return seleccion[rolId]?.has(accionId) ?? false;
 }
@@ -50,10 +73,26 @@ function alternar(
     accionId: number,
     valor: boolean | 'indeterminate',
 ): void {
+    const set = seleccion[rolId];
+    const info = infoAccion.get(accionId);
+
     if (valor === true) {
-        seleccion[rolId].add(accionId);
+        set.add(accionId);
+        // Habilitar una accion de escritura implica habilitar "ver" (listar) del modulo.
+        if (info && ESCRITURA.includes(info.clave)) {
+            const listarId = listarDeModulo.get(info.moduloId);
+            if (listarId !== undefined) {
+                set.add(listarId);
+            }
+        }
     } else {
-        seleccion[rolId].delete(accionId);
+        set.delete(accionId);
+        // Quitar "ver" (listar) implica quitar las acciones de escritura del modulo.
+        if (info && info.clave === 'listar') {
+            escriturasDeModulo
+                .get(info.moduloId)
+                ?.forEach((id) => set.delete(id));
+        }
     }
 }
 
@@ -66,7 +105,7 @@ function guardar(): void {
     const payload: Record<number, number[]> = {};
     props.roles.forEach((rol) => {
         if (!rol.editable) {
-            return; // el super-rol (Administrador) no se envia: el servidor lo mantiene completo
+            return; // el super-rol (Propietario) no se envia: el servidor lo mantiene completo
         }
         payload[rol.id] = Array.from(seleccion[rol.id] ?? []);
     });
@@ -138,7 +177,7 @@ function guardar(): void {
                                 <div class="flex justify-center">
                                     <Checkbox
                                         :model-value="estaMarcado(rol.id, accion.id)"
-                                        :disabled="!rol.editable"
+                                        :disabled="!puedeEditar || !rol.editable"
                                         @update:model-value="
                                             alternar(rol.id, accion.id, $event)
                                         "
@@ -151,7 +190,7 @@ function guardar(): void {
             </table>
         </div>
 
-        <div class="flex items-center gap-3">
+        <div v-if="puedeEditar" class="flex items-center gap-3">
             <Button :disabled="form.processing" @click="guardar">
                 Guardar cambios
             </Button>
@@ -162,5 +201,8 @@ function guardar(): void {
                 Cambios guardados ✓
             </span>
         </div>
+        <p v-else class="text-sm text-muted-foreground">
+            Solo tienes permiso para <strong>ver</strong> la matriz (modo solo-lectura).
+        </p>
     </div>
 </template>

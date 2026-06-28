@@ -10,7 +10,7 @@ use Illuminate\Support\Collection;
 
 /**
  * Llena la MATRIZ DE ACCESO (tabla rol_accion): que acciones tiene cada rol.
- * Es el estado inicial que luego el Administrador podra editar desde la UI.
+ * Es el estado inicial que luego el Propietario podra editar desde la UI.
  */
 class RolAccionSeeder extends Seeder
 {
@@ -18,7 +18,7 @@ class RolAccionSeeder extends Seeder
     {
         // Mapa rol -> (modulo.clave => [accion.clave, ...]).  '*' = todas las acciones.
         $matriz = [
-            'Administrador' => '*',
+            'Propietario' => '*',
             'Vendedor' => [
                 'dashboard' => ['ver'],
                 'productos' => ['listar'],

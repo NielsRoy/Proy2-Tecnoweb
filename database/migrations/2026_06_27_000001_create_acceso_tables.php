@@ -18,7 +18,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // Un rol agrupa permisos (ej. Administrador, Vendedor, Cliente, Proveedor).
+        // Un rol agrupa permisos (ej. Propietario, Vendedor, Cliente, Proveedor).
         Schema::create('rol', function (Blueprint $table) {
             $table->id();
             $table->string('nombre')->unique();

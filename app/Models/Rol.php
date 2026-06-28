@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 /**
- * Un rol agrupa permisos (acciones). Ej: Administrador, Vendedor, Cliente, Proveedor.
+ * Un rol agrupa permisos (acciones). Ej: Propietario, Vendedor, Cliente, Proveedor.
  *
  * @property int $id
  * @property string $nombre
