@@ -90,7 +90,9 @@ class AccesoController extends Controller
 
         Bitacora::registrar('modificar', 'Actualizó la matriz de acceso', 'acceso');
 
-        return back()->with('success', 'Matriz de acceso actualizada.');
+        $this->toastExito('Matriz de acceso actualizada.');
+
+        return back();
     }
 
     /**

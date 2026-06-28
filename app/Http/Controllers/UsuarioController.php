@@ -87,7 +87,9 @@ class UsuarioController extends Controller
             );
         });
 
-        return redirect()->route('usuarios.index')->with('success', 'Usuario creado.');
+        $this->toastExito('Usuario creado.');
+
+        return redirect()->route('usuarios.index');
     }
 
     /** Formulario de edicion. */
@@ -130,7 +132,9 @@ class UsuarioController extends Controller
             );
         });
 
-        return redirect()->route('usuarios.index')->with('success', 'Usuario actualizado.');
+        $this->toastExito('Usuario actualizado.');
+
+        return redirect()->route('usuarios.index');
     }
 
     /** Elimina un usuario (no se permite eliminarse a si mismo). */
@@ -153,7 +157,9 @@ class UsuarioController extends Controller
 
         Bitacora::registrar('eliminar', "Eliminó el usuario {$nombre}", 'usuarios');
 
-        return redirect()->route('usuarios.index')->with('success', 'Usuario eliminado.');
+        $this->toastExito('Usuario eliminado.');
+
+        return redirect()->route('usuarios.index');
     }
 
     /**

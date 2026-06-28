@@ -33,7 +33,7 @@ class SecurityController extends Controller
             'password' => $request->password,
         ]);
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => __('Password updated.')]);
+        $this->toastExito('Contraseña actualizada.');
 
         return back();
     }

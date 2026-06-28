@@ -191,12 +191,6 @@ function guardar(): void {
             <Button :disabled="form.processing" @click="guardar">
                 Guardar cambios
             </Button>
-            <span
-                v-if="form.recentlySuccessful"
-                class="text-sm text-green-600 dark:text-green-400"
-            >
-                Cambios guardados ✓
-            </span>
         </div>
         <p v-else class="text-sm text-muted-foreground">
             Solo tienes permiso para <strong>ver</strong> la matriz (modo solo-lectura).
