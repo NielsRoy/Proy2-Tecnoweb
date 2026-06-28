@@ -6,7 +6,9 @@ use Illuminate\Support\Facades\Route;
 Route::inertia('/', 'Welcome')->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::inertia('dashboard', 'Dashboard')->name('dashboard');
+    Route::inertia('dashboard', 'Dashboard')
+        ->middleware('permiso:dashboard,ver')
+        ->name('dashboard');
 
     // Matriz de Acceso (solo quien tenga el permiso del modulo "acceso").
     Route::get('acceso/matriz', [AccesoController::class, 'matriz'])

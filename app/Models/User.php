@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Route;
 
 /**
  * @property int $id
@@ -168,5 +169,43 @@ class User extends Authenticatable
         };
 
         return $construir(0);
+    }
+
+    /**
+     * URL de aterrizaje tras iniciar sesion (path relativo, respeta el subdirectorio).
+     * Devuelve la primera ruta navegable del menu del usuario (ya ordenado por orden);
+     * si ningun modulo tiene pagina construida (o no tiene modulos), cae a la
+     * configuracion de perfil como refugio para que igual pueda entrar a configurarse.
+     */
+    public function urlInicio(): string
+    {
+        foreach ($this->modulosPermitidos() as $modulo) {
+            if ($url = $this->primeraRutaNavegable($modulo)) {
+                return $url;
+            }
+        }
+
+        return route('profile.edit', absolute: false);
+    }
+
+    /**
+     * Ruta navegable del modulo (si su ruta existe), si no busca recursivamente en sus hijos.
+     * Mismo criterio que HandleInertiaRequests::resolverHrefs() (Route::has + route(absolute:false)).
+     *
+     * @param  array<string, mixed>  $modulo
+     */
+    private function primeraRutaNavegable(array $modulo): ?string
+    {
+        if (! empty($modulo['ruta']) && Route::has($modulo['ruta'])) {
+            return route($modulo['ruta'], absolute: false);
+        }
+
+        foreach ($modulo['hijos'] ?? [] as $hijo) {
+            if ($url = $this->primeraRutaNavegable($hijo)) {
+                return $url;
+            }
+        }
+
+        return null;
     }
 }
