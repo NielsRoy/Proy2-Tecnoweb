@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Concerns\PasswordValidationRules;
 use App\Concerns\ProfileValidationRules;
+use App\Models\Bitacora;
 use App\Models\Rol;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
@@ -78,6 +79,12 @@ class UsuarioController extends Controller
                 'password' => $datos['password'], // el cast 'hashed' del modelo lo hashea
             ]);
             $this->asignarRol($usuario, (int) $datos['rol_id']);
+
+            Bitacora::registrar(
+                'crear',
+                "Creó el usuario {$usuario->name} ({$usuario->email})",
+                'usuarios',
+            );
         });
 
         return redirect()->route('usuarios.index')->with('success', 'Usuario creado.');
@@ -115,6 +122,12 @@ class UsuarioController extends Controller
             }
 
             $this->asignarRol($usuario, (int) $datos['rol_id']);
+
+            Bitacora::registrar(
+                'modificar',
+                "Modificó el usuario {$usuario->name}",
+                'usuarios',
+            );
         });
 
         return redirect()->route('usuarios.index')->with('success', 'Usuario actualizado.');
@@ -135,7 +148,10 @@ class UsuarioController extends Controller
             'No se puede eliminar al usuario Propietario del sistema.',
         );
 
+        $nombre = $usuario->name;
         $usuario->delete();
+
+        Bitacora::registrar('eliminar', "Eliminó el usuario {$nombre}", 'usuarios');
 
         return redirect()->route('usuarios.index')->with('success', 'Usuario eliminado.');
     }

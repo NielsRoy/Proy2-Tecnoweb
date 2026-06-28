@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Accion;
+use App\Models\Bitacora;
 use App\Models\Modulo;
 use App\Models\Rol;
 use Illuminate\Http\RedirectResponse;
@@ -86,6 +87,8 @@ class AccesoController extends Controller
             $accionIds = $this->normalizarDependencias($accionIds);
             $rol->acciones()->sync($accionIds);          // reemplaza la fila completa del rol
         }
+
+        Bitacora::registrar('modificar', 'Actualizó la matriz de acceso', 'acceso');
 
         return back()->with('success', 'Matriz de acceso actualizada.');
     }

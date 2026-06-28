@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AccesoController;
+use App\Http\Controllers\BitacoraController;
 use App\Http\Controllers\UsuarioController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -32,6 +33,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('{usuario}', [UsuarioController::class, 'destroy'])
             ->middleware('permiso:usuarios,eliminar')->name('destroy');
     });
+
+    // Bitacora (auditoria): vista de solo-lectura del modulo "bitacora".
+    Route::get('bitacora', [BitacoraController::class, 'index'])
+        ->middleware('permiso:bitacora,listar')
+        ->name('bitacora.index');
 
     // Matriz de Acceso (solo quien tenga el permiso del modulo "acceso").
     Route::get('acceso/matriz', [AccesoController::class, 'matriz'])

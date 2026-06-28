@@ -31,7 +31,8 @@ class ModuloSeeder extends Seeder
             ['clave' => 'promociones', 'nombre' => 'Promociones', 'icono' => 'BadgePercent', 'ruta' => 'promociones.index', 'orden' => 7, 'acciones' => $crud],
             ['clave' => 'pagos', 'nombre' => 'Pagos', 'icono' => 'CreditCard', 'ruta' => 'pagos.index', 'orden' => 8, 'acciones' => $crud],
             ['clave' => 'reportes', 'nombre' => 'Reportes', 'icono' => 'ChartColumn', 'ruta' => 'reportes.index', 'orden' => 9, 'acciones' => ['listar' => 'Ver reportes']],
-            ['clave' => 'acceso', 'nombre' => 'Control de Acceso', 'icono' => 'ShieldCheck', 'ruta' => 'acceso.matriz', 'orden' => 10, 'acciones' => ['listar' => 'Ver matriz', 'modificar' => 'Editar matriz']],
+            ['clave' => 'bitacora', 'nombre' => 'Bitácora', 'icono' => 'ScrollText', 'ruta' => 'bitacora.index', 'orden' => 10, 'acciones' => ['listar' => 'Ver bitácora']],
+            ['clave' => 'acceso', 'nombre' => 'Control de Acceso', 'icono' => 'ShieldCheck', 'ruta' => 'acceso.matriz', 'orden' => 11, 'acciones' => ['listar' => 'Ver matriz', 'modificar' => 'Editar matriz']],
         ];
 
         foreach ($modulos as $m) {

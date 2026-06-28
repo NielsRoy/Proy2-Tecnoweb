@@ -7,6 +7,7 @@ import {
     type LucideIcon,
     Package,
     Receipt,
+    ScrollText,
     ShieldCheck,
     ShoppingCart,
     Users,
@@ -24,6 +25,7 @@ const iconos: Record<string, LucideIcon> = {
     BadgePercent,
     CreditCard,
     ChartColumn,
+    ScrollText,
     ShieldCheck,
 };
 
