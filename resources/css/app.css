@@ -200,15 +200,21 @@ select option[selected] {
 }
 
 /*
-  Alerta (toast) — accesibilidad. vue-sonner fija el font-size en px, por eso el texto del
-  toast NO escalaba con el "Tamaño de letra" de Accesibilidad (html[data-font-size], que es %).
-  Lo pasamos a rem (relativo a la raíz). El toast se teletransporta a <body>, así que la regla
-  es global (no scoped). El look temático no cambia: solo tocamos el tamaño.
+  Alerta (toast) — fuente y tamaño según el tema/accesibilidad.
+  - vue-sonner fija su PROPIA font-family en [data-sonner-toaster]; con `inherit` toma la del
+    <body> (que lleva .font-sans, tematizada por data-font) → el toast respeta la fuente del tema.
+  - vue-sonner fija font-size en px en [data-sonner-toast][data-styled='true'] (más específico que
+    un simple [data-sonner-toast], por eso el override anterior no ganaba). Replicamos ESE selector
+    con un ancestro extra para ganar siempre y lo pasamos a rem → escala con html[data-font-size]
+    (Accesibilidad). El toast se teletransporta a <body>, por eso las reglas son globales (no scoped).
 */
-[data-sonner-toast] {
+[data-sonner-toaster] {
+    font-family: inherit;
+}
+[data-sonner-toaster] [data-sonner-toast][data-styled='true'] {
     font-size: 0.8125rem; /* 13px a tamaño base */
 }
-[data-sonner-toast] [data-button] {
+[data-sonner-toaster] [data-sonner-toast][data-styled='true'] [data-button] {
     font-size: 0.75rem; /* 12px a tamaño base */
 }
 

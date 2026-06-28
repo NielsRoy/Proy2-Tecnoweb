@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
@@ -56,6 +57,28 @@ class User extends Authenticatable
         return $this->belongsToMany(Rol::class, 'usuario_rol', 'user_id', 'rol_id')
             ->withPivot(['fini', 'ffin', 'est'])
             ->withTimestamps();
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Negocio (cliente / proveedor) — el rol se valida en la app, no en la BD
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /** Ventas en las que este usuario es el cliente. */
+    public function ventas(): HasMany
+    {
+        return $this->hasMany(Venta::class, 'cliente_id');
+    }
+
+    /** Compras en las que este usuario es el proveedor. */
+    public function compras(): HasMany
+    {
+        return $this->hasMany(Compra::class, 'proveedor_id');
+    }
+
+    /** Lineas del carrito de este usuario (cliente). */
+    public function carrito(): HasMany
+    {
+        return $this->hasMany(Carrito::class, 'cliente_id');
     }
 
     /**

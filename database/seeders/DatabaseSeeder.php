@@ -21,6 +21,8 @@ class DatabaseSeeder extends Seeder
             ModuloSeeder::class,
             RolAccionSeeder::class,
             UsuarioRolSeeder::class,
+            // Datos de negocio (reusa los users demo de UsuarioRolSeeder).
+            NegocioSeeder::class,
         ]);
     }
 }

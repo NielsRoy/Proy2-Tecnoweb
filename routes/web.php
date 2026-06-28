@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AccesoController;
 use App\Http\Controllers\BitacoraController;
+use App\Http\Controllers\ProductoController;
 use App\Http\Controllers\UsuarioController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -32,6 +33,22 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->middleware('permiso:usuarios,modificar')->name('update');
         Route::delete('{usuario}', [UsuarioController::class, 'destroy'])
             ->middleware('permiso:usuarios,eliminar')->name('destroy');
+    });
+
+    // CRUD de Productos (CU2, modulo "productos").
+    Route::prefix('productos')->name('productos.')->group(function () {
+        Route::get('/', [ProductoController::class, 'index'])
+            ->middleware('permiso:productos,listar')->name('index');
+        Route::get('crear', [ProductoController::class, 'create'])
+            ->middleware('permiso:productos,registrar')->name('create');
+        Route::post('/', [ProductoController::class, 'store'])
+            ->middleware('permiso:productos,registrar')->name('store');
+        Route::get('{producto}/editar', [ProductoController::class, 'edit'])
+            ->middleware('permiso:productos,modificar')->name('edit');
+        Route::put('{producto}', [ProductoController::class, 'update'])
+            ->middleware('permiso:productos,modificar')->name('update');
+        Route::delete('{producto}', [ProductoController::class, 'destroy'])
+            ->middleware('permiso:productos,eliminar')->name('destroy');
     });
 
     // Bitacora (auditoria): vista de solo-lectura del modulo "bitacora".
