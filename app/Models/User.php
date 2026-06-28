@@ -7,6 +7,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
@@ -42,5 +43,130 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Roles / Control de Acceso
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /** Roles asignados a este usuario (con vigencia fini/ffin en el pivote). */
+    public function roles(): BelongsToMany
+    {
+        return $this->belongsToMany(Rol::class, 'usuario_rol', 'user_id', 'rol_id')
+            ->withPivot(['fini', 'ffin', 'est'])
+            ->withTimestamps();
+    }
+
+    /**
+     * Roles VIGENTES hoy: rol activo, asignacion activa y dentro del rango fini..ffin
+     * (cualquiera de los dos puede ser null = sin limite). Es la base de todo el control
+     * de acceso: el menu y el guardia solo miran roles vigentes.
+     */
+    public function rolesVigentes(): BelongsToMany
+    {
+        $hoy = now()->toDateString();
+
+        return $this->roles()
+            ->where('rol.est', true)
+            ->wherePivot('est', true)
+            ->where(fn ($q) => $q->whereNull('usuario_rol.fini')->orWhere('usuario_rol.fini', '<=', $hoy))
+            ->where(fn ($q) => $q->whereNull('usuario_rol.ffin')->orWhere('usuario_rol.ffin', '>=', $hoy));
+    }
+
+    /**
+     * Acciones permitidas al usuario hoy: activas, de un modulo activo, otorgadas por
+     * alguno de sus roles vigentes. Cada accion trae su modulo cargado (with('modulo')).
+     *
+     * @return \Illuminate\Database\Eloquent\Collection<int, \App\Models\Accion>
+     */
+    public function accionesPermitidas()
+    {
+        $rolIds = $this->rolesVigentes()->pluck('rol.id');
+
+        if ($rolIds->isEmpty()) {
+            return Accion::query()->whereRaw('1 = 0')->get(); // coleccion vacia tipada
+        }
+
+        return Accion::query()
+            ->where('accion.est', true)
+            ->whereHas('modulo', fn ($q) => $q->where('est', true))
+            ->whereHas('roles', fn ($q) => $q->whereIn('rol.id', $rolIds))
+            ->with('modulo')
+            ->get();
+    }
+
+    /**
+     * ¿El usuario puede ejecutar (moduloClave, accionClave)? Lo usa el guardia de rutas.
+     * Ej: $user->tienePermiso('productos', 'registrar').
+     */
+    public function tienePermiso(string $moduloClave, string $accionClave): bool
+    {
+        $rolIds = $this->rolesVigentes()->pluck('rol.id');
+
+        if ($rolIds->isEmpty()) {
+            return false;
+        }
+
+        return Accion::query()
+            ->where('accion.clave', $accionClave)
+            ->where('accion.est', true)
+            ->whereHas('modulo', fn ($q) => $q->where('clave', $moduloClave)->where('est', true))
+            ->whereHas('roles', fn ($q) => $q->whereIn('rol.id', $rolIds))
+            ->exists();
+    }
+
+    /**
+     * Arbol de modulos permitidos para construir el MENU DINAMICO. Devuelve solo los
+     * modulos con alguna accion permitida (o con hijos visibles), respetando padre_id y orden.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function modulosPermitidos(): array
+    {
+        $acciones = $this->accionesPermitidas();
+
+        if ($acciones->isEmpty()) {
+            return [];
+        }
+
+        $accionesPorModulo = $acciones->groupBy('modulo_id');
+
+        // Todos los modulos activos, agrupados por su padre (0 = raiz del menu).
+        $porPadre = Modulo::where('est', true)
+            ->orderBy('orden')->orderBy('id')->get()
+            ->groupBy(fn (Modulo $m) => (int) ($m->padre_id ?? 0));
+
+        // Recursion: arma cada nivel; incluye un modulo si tiene acciones o hijos visibles.
+        $construir = function (int $padreId) use (&$construir, $porPadre, $accionesPorModulo): array {
+            $nodos = [];
+
+            foreach ($porPadre->get($padreId, collect()) as $modulo) {
+                $hijos = $construir((int) $modulo->id);
+                $accs = $accionesPorModulo->get($modulo->id);
+
+                if (! $accs && empty($hijos)) {
+                    continue; // sin permisos ni hijos visibles -> no se muestra
+                }
+
+                $nodos[] = [
+                    'clave' => $modulo->clave,
+                    'nombre' => $modulo->nombre,
+                    'icono' => $modulo->icono,
+                    'ruta' => $modulo->ruta,
+                    'acciones' => $accs
+                        ? $accs->map(fn (Accion $a) => [
+                            'clave' => $a->clave,
+                            'nombre' => $a->nombre,
+                            'ruta' => $a->ruta,
+                        ])->values()->all()
+                        : [],
+                    'hijos' => $hijos,
+                ];
+            }
+
+            return $nodos;
+        };
+
+        return $construir(0);
     }
 }

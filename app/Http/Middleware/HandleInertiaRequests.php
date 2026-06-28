@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Models\VisitaPagina;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -53,6 +54,44 @@ class HandleInertiaRequests extends Middleware
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
             'visitasPagina' => $visitasPagina,
+            // Menu dinamico: arbol de modulos permitidos al usuario logueado (vacio si no hay sesion).
+            'menu' => $this->menuUsuario($request),
         ];
+    }
+
+    /**
+     * Construye el menu del usuario autenticado a partir de sus modulos permitidos,
+     * resolviendo cada nombre de ruta a una URL (que respeta el subdirectorio via APP_URL).
+     * Si la ruta aun no existe (CU sin construir), href = null y el front la muestra no-clicable.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function menuUsuario(Request $request): array
+    {
+        $user = $request->user();
+
+        if (! $user) {
+            return [];
+        }
+
+        return $this->resolverHrefs($user->modulosPermitidos());
+    }
+
+    /**
+     * Recorre el arbol del menu y agrega `href` (URL resuelta) a cada modulo.
+     *
+     * @param  array<int, array<string, mixed>>  $nodos
+     * @return array<int, array<string, mixed>>
+     */
+    private function resolverHrefs(array $nodos): array
+    {
+        return array_map(function (array $nodo) {
+            $nodo['href'] = $nodo['ruta'] && Route::has($nodo['ruta'])
+                ? route($nodo['ruta'], absolute: false)
+                : null;
+            $nodo['hijos'] = $this->resolverHrefs($nodo['hijos']);
+
+            return $nodo;
+        }, $nodos);
     }
 }

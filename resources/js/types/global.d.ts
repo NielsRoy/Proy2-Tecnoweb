@@ -1,4 +1,5 @@
 import type { Auth } from '@/types/auth';
+import type { MenuModulo } from '@/types/navigation';
 
 // Extend ImportMeta interface for Vite...
 declare module 'vite/client' {
@@ -21,6 +22,8 @@ declare module '@inertiajs/core' {
             sidebarOpen: boolean;
             // Visitas (vistas) de la pagina actual; null si la peticion no se cuenta.
             visitasPagina: number | null;
+            // Menu dinamico del usuario logueado (arbol de modulos permitidos).
+            menu: MenuModulo[];
             [key: string]: unknown;
         };
     }
