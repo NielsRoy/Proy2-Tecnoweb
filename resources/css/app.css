@@ -172,6 +172,19 @@
 }
 
 /*
+  Desplegable de los <select> nativos: que las <option> (y el propio select) usen la
+  SUPERFICIE DEL TEMA (variables --popover/--popover-foreground), que están definidas en
+  cada contexto: paletas ninos/jovenes/adultos (claro y oscuro) y alto contraste (claro y
+  oscuro). Así el menú no sale ni con el gris genérico de `color-scheme`, ni blanco-sobre-
+  blanco en modo noche + alto contraste. (En Windows, Chrome/Firefox respetan estos
+  colores en <option>.) `color-scheme` se queda para los date pickers nativos.
+*/
+select option {
+    background-color: var(--popover);
+    color: var(--popover-foreground);
+}
+
+/*
   Temas por edad — PALETAS de color (identidad de minimarket / tienda de conveniencia:
   verde "mercado/fresco" como ancla, con cálidos naranja/amarillo de energía).
   Un tema = paleta (data-palette) + fuente (data-font). 'adultos' es el default (verde

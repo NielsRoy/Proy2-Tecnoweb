@@ -5,6 +5,7 @@ import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileCo
 import DeleteUser from '@/components/DeleteUser.vue';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -23,6 +24,7 @@ defineOptions({
 
 const page = usePage();
 const user = computed(() => page.props.auth.user);
+const roles = computed(() => page.props.auth.roles ?? []);
 </script>
 
 <template>
@@ -36,6 +38,18 @@ const user = computed(() => page.props.auth.user);
             title="Perfil"
             description="Actualiza tu nombre y correo electrónico"
         />
+
+        <div class="flex items-center gap-2">
+            <span class="text-sm text-muted-foreground">Rol:</span>
+            <template v-if="roles.length">
+                <Badge v-for="rol in roles" :key="rol" variant="secondary">
+                    {{ rol }}
+                </Badge>
+            </template>
+            <span v-else class="text-sm text-muted-foreground">
+                Sin rol asignado
+            </span>
+        </div>
 
         <Form
             v-bind="ProfileController.update.form()"

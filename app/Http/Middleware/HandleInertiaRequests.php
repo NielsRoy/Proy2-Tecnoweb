@@ -51,6 +51,10 @@ class HandleInertiaRequests extends Middleware
             'name' => config('app.name'),
             'auth' => [
                 'user' => $request->user(),
+                // Nombres de los roles vigentes del usuario (para mostrar el rol en la UI).
+                'roles' => $request->user()
+                    ? $request->user()->rolesVigentes()->pluck('nombre')->values()
+                    : [],
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
             'visitasPagina' => $visitasPagina,

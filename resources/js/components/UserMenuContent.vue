@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { Link, router } from '@inertiajs/vue3';
+import { Link, router, usePage } from '@inertiajs/vue3';
 import { LogOut, Settings } from '@lucide/vue';
+import { computed } from 'vue';
 import {
     DropdownMenuGroup,
     DropdownMenuItem,
@@ -21,12 +22,22 @@ const handleLogout = () => {
 };
 
 defineProps<Props>();
+
+const page = usePage();
+const roles = computed(() => page.props.auth.roles ?? []);
+
 </script>
 
 <template>
     <DropdownMenuLabel class="p-0 font-normal">
         <div class="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
             <UserInfo :user="user" :show-email="true" />
+        </div>
+        <div
+            v-if="roles.length"
+            class="px-1 pb-1.5 text-xs text-muted-foreground"
+        >
+            Rol: {{ roles.join(', ') }}
         </div>
     </DropdownMenuLabel>
     <DropdownMenuSeparator />

@@ -11,6 +11,8 @@ export type User = {
 
 export type Auth = {
     user: User;
+    // Nombres de los roles vigentes del usuario autenticado ([] si no hay sesión).
+    roles: string[];
 };
 
 /* @chisel-passkeys */
