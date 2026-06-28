@@ -94,6 +94,10 @@
   acorde al dominio del negocio (tienda tipo minimarket / tienda de conveniencia).
 */
 :root {
+    /* Hace que los controles nativos (lista de <option> de los select, date pickers)
+       se rendericen acorde al tema. En .dark se cambia a 'dark' para que el desplegable
+       no salga blanco con letras blancas (ilegible). */
+    color-scheme: light;
     --background: hsl(150 25% 99%);
     --foreground: hsl(160 25% 12%);
     --card: hsl(0 0% 100%);
@@ -131,6 +135,7 @@
 }
 
 .dark {
+    color-scheme: dark;
     --background: hsl(160 20% 9%);
     --foreground: hsl(150 15% 95%);
     --card: hsl(160 18% 12%);

@@ -3,7 +3,7 @@ import { Head, useForm, usePage } from '@inertiajs/vue3';
 import { reactive } from 'vue';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { dashboard } from '@/routes';
+import { matriz } from '@/routes/acceso';
 
 type AccionItem = { id: number; clave: string; nombre: string };
 type ModuloItem = {
@@ -30,10 +30,7 @@ const props = defineProps<{
 
 defineOptions({
     layout: {
-        breadcrumbs: [
-            { title: 'Dashboard', href: dashboard() },
-            { title: 'Control de Acceso', href: dashboard() },
-        ],
+        breadcrumbs: [{ title: 'Control de Acceso', href: matriz() }],
     },
 });
 
