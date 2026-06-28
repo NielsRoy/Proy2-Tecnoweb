@@ -172,16 +172,31 @@
 }
 
 /*
-  Desplegable de los <select> nativos: que las <option> (y el propio select) usen la
-  SUPERFICIE DEL TEMA (variables --popover/--popover-foreground), que están definidas en
-  cada contexto: paletas ninos/jovenes/adultos (claro y oscuro) y alto contraste (claro y
-  oscuro). Así el menú no sale ni con el gris genérico de `color-scheme`, ni blanco-sobre-
-  blanco en modo noche + alto contraste. (En Windows, Chrome/Firefox respetan estos
-  colores en <option>.) `color-scheme` se queda para los date pickers nativos.
+  Desplegable de los <select> nativos: que las <option> usen la SUPERFICIE DEL TEMA
+  (variables --popover/--popover-foreground), definidas en cada contexto: paletas
+  ninos/jovenes/adultos (claro y oscuro) y alto contraste (claro y oscuro). Así el menú no
+  sale ni con el gris genérico de `color-scheme`, ni blanco-sobre-blanco en noche + alto
+  contraste. Además, los estados interactivos se tematizan: la opción SELECCIONADA usa el
+  color primario (de marca) y la opción RESALTADA usa el accent (igual que los hover del
+  resto del UI). (En Windows, Chrome/Firefox respetan estos colores en <option>; el resaltado
+  por hover puede variar según el navegador.) `color-scheme` se queda para que el calendario
+  nativo del date picker salga en claro/oscuro acorde al modo (ese popup del SO no admite
+  más tematización por CSS).
 */
 select option {
     background-color: var(--popover);
     color: var(--popover-foreground);
+}
+
+select option:hover {
+    background-color: var(--accent);
+    color: var(--accent-foreground);
+}
+
+select option:checked,
+select option[selected] {
+    background-color: var(--primary);
+    color: var(--primary-foreground);
 }
 
 /*
