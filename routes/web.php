@@ -4,13 +4,14 @@ use App\Http\Controllers\AccesoController;
 use App\Http\Controllers\BitacoraController;
 use App\Http\Controllers\ProductoController;
 use App\Http\Controllers\UsuarioController;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::inertia('/', 'Welcome')->name('home');
 
-// "Ingresar al sistema": aplica la regla de inicio (User::urlInicio()) en un solo lugar.
-Route::get('inicio', fn (Request $request) => redirect($request->user()->urlInicio()))
+// Inicio: pagina de aterrizaje fija para TODO usuario autenticado. NO va en la matriz de acceso
+// (solo 'auth', sin 'permiso:') -> no se puede desactivar por rol. Destino tras login/registro,
+// del logo y del boton "Ingresar al sistema".
+Route::inertia('inicio', 'Inicio')
     ->middleware('auth')
     ->name('inicio');
 

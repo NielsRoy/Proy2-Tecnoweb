@@ -7,8 +7,8 @@ use Illuminate\Http\RedirectResponse;
 use Laravel\Fortify\Contracts\RegisterResponse as RegisterResponseContract;
 
 /**
- * Respuesta de registro con destino dinamico: el nuevo usuario (rol Cliente por defecto)
- * aterriza en su URL de inicio segun sus permisos (User::urlInicio()) en vez del home fijo.
+ * Respuesta de registro: el nuevo usuario (rol Cliente por defecto) aterriza en la pagina fija
+ * /inicio (accesible a todo autenticado).
  */
 class RegisterResponse implements RegisterResponseContract
 {
@@ -16,6 +16,6 @@ class RegisterResponse implements RegisterResponseContract
     {
         return $request->wantsJson()
             ? new JsonResponse('', 201)
-            : redirect()->intended($request->user()->urlInicio());
+            : redirect()->intended(route('inicio'));
     }
 }

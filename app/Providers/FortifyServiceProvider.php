@@ -22,8 +22,7 @@ class FortifyServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        // Destino dinamico tras login/registro: a la URL de inicio del usuario segun
-        // sus permisos (User::urlInicio()), no al home fijo /dashboard de Fortify.
+        // Destino tras login/registro: la pagina fija /inicio (no el home /dashboard de Fortify).
         $this->app->singleton(
             \Laravel\Fortify\Contracts\LoginResponse::class,
             \App\Http\Responses\LoginResponse::class,
@@ -44,10 +43,10 @@ class FortifyServiceProvider extends ServiceProvider
         $this->configureRateLimiting();
 
         // Un usuario ya autenticado que entra a /login o /register (middleware "guest")
-        // se redirige a su URL de inicio segun permisos, no al /dashboard fijo (que ademas
-        // podria estar bloqueado por el guardia permiso:dashboard,ver y dar 403).
+        // se redirige a la pagina fija /inicio, no al /dashboard de Fortify (que ademas podria
+        // estar bloqueado por el guardia permiso:dashboard,ver y dar 403).
         RedirectIfAuthenticated::redirectUsing(
-            fn (Request $request) => $request->user()->urlInicio(),
+            fn () => route('inicio'),
         );
     }
 

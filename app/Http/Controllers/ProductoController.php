@@ -12,10 +12,10 @@ use Inertia\Response;
 
 /**
  * CRUD de productos (CU2, modulo "productos"). El stock NO se edita aqui: nace en 0 y lo
- * mueven compras/ventas/inventario. La foto se guarda en el disco "uploads" (public_path('uploads'),
- * servido en APP_URL/uploads), que funciona con el `public/` aplanado de produccion sin necesitar
- * storage:link. Eliminar es BAJA LOGICA (est=false) porque el producto puede estar referenciado por
- * ventas/compras (FK restrict). Rutas protegidas con permiso:productos,<accion>.
+ * mueven compras/ventas/inventario. La foto se guarda en el disco publico (storage/app/public,
+ * servido en /storage via `php artisan storage:link`). Eliminar es BAJA LOGICA (est=false) porque el
+ * producto puede estar referenciado por ventas/compras (FK restrict). Rutas protegidas con
+ * permiso:productos,<accion>.
  */
 class ProductoController extends Controller
 {
@@ -56,7 +56,7 @@ class ProductoController extends Controller
             'precio' => $datos['precio'],
             'stock' => 0, // el stock se mueve por compras/ventas/inventario, no a mano
             'foto' => $request->hasFile('foto')
-                ? $request->file('foto')->store('productos', 'uploads')
+                ? $request->file('foto')->store('productos', 'public')
                 : null,
             'est' => true,
         ]);
@@ -87,9 +87,9 @@ class ProductoController extends Controller
         // Si llega una foto nueva, reemplaza la anterior (borra el archivo viejo).
         if ($request->hasFile('foto')) {
             if ($producto->foto) {
-                Storage::disk('uploads')->delete($producto->foto);
+                Storage::disk('public')->delete($producto->foto);
             }
-            $producto->foto = $request->file('foto')->store('productos', 'uploads');
+            $producto->foto = $request->file('foto')->store('productos', 'public');
         }
 
         $producto->fill([
@@ -118,7 +118,7 @@ class ProductoController extends Controller
     /** URL publica de la foto (respeta el subdirectorio via APP_URL), o null si no tiene. */
     private function fotoUrl(Producto $producto): ?string
     {
-        return $producto->foto ? Storage::disk('uploads')->url($producto->foto) : null;
+        return $producto->foto ? Storage::disk('public')->url($producto->foto) : null;
     }
 
     /**

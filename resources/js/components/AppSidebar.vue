@@ -15,7 +15,7 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { dashboard } from '@/routes';
+import { inicio } from '@/routes';
 import type { MenuModulo, NavItem } from '@/types';
 
 const page = usePage();
@@ -43,7 +43,7 @@ const footerNavItems: NavItem[] = [
             <SidebarMenu>
                 <SidebarMenuItem>
                     <SidebarMenuButton size="lg" as-child>
-                        <Link :href="dashboard()">
+                        <Link :href="inicio()">
                             <AppLogo />
                         </Link>
                     </SidebarMenuButton>
