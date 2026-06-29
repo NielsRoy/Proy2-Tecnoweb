@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Support\Url;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -12,7 +13,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Route;
 
 /**
  * @property int $id
@@ -208,19 +208,19 @@ class User extends Authenticatable
             }
         }
 
-        return route('profile.edit', absolute: false);
+        return Url::path('profile.edit');
     }
 
     /**
      * Ruta navegable del modulo (si su ruta existe), si no busca recursivamente en sus hijos.
-     * Mismo criterio que HandleInertiaRequests::resolverHrefs() (Route::has + route(absolute:false)).
+     * Mismo criterio que HandleInertiaRequests::resolverHrefs() (Url::pathSiExiste).
      *
      * @param  array<string, mixed>  $modulo
      */
     private function primeraRutaNavegable(array $modulo): ?string
     {
-        if (! empty($modulo['ruta']) && Route::has($modulo['ruta'])) {
-            return route($modulo['ruta'], absolute: false);
+        if ($url = Url::pathSiExiste($modulo['ruta'] ?? null)) {
+            return $url;
         }
 
         foreach ($modulo['hijos'] ?? [] as $hijo) {

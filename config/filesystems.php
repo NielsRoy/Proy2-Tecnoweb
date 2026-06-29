@@ -47,6 +47,21 @@ return [
             'report' => false,
         ],
 
+        // Subidas servibles directamente por la web (fotos de producto, etc.). A diferencia del
+        // disco "public" (que necesita el symlink storage:link → /storage), este escribe dentro de
+        // public_path('uploads') y se sirve en APP_URL/uploads. En produccion el `public/` esta
+        // "aplanado" (usePublicPath = la raiz del deploy), asi que public_path('uploads') cae en
+        // .../proyectoN/uploads — una carpeta servible y NO bloqueada por el .htaccess (a diferencia
+        // de storage/, que SI esta bloqueada). Por eso aqui no hace falta storage:link.
+        'uploads' => [
+            'driver' => 'local',
+            'root' => public_path('uploads'),
+            'url' => rtrim((string) env('APP_URL', 'http://localhost'), '/').'/uploads',
+            'visibility' => 'public',
+            'throw' => false,
+            'report' => false,
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),

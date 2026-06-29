@@ -3,8 +3,8 @@
 namespace App\Http\Middleware;
 
 use App\Models\VisitaPagina;
+use App\Support\Url;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -90,9 +90,7 @@ class HandleInertiaRequests extends Middleware
     private function resolverHrefs(array $nodos): array
     {
         return array_map(function (array $nodo) {
-            $nodo['href'] = $nodo['ruta'] && Route::has($nodo['ruta'])
-                ? route($nodo['ruta'], absolute: false)
-                : null;
+            $nodo['href'] = Url::pathSiExiste($nodo['ruta']);
             $nodo['hijos'] = $this->resolverHrefs($nodo['hijos']);
 
             return $nodo;
