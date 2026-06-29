@@ -15,6 +15,11 @@ class Url
      * front), de modo que en produccion sale ".../inf513/grupo25sa/proyecto3/productos" y
      * en local (APP_URL sin path) sale "/productos". Pensado para rutas SIN parametros
      * (modulos/acciones del menu dinamico).
+     *
+     * ⚠️ SOLO para hrefs que consume el navegador / Inertia <Link> (client-side), donde un path
+     * root-relative se resuelve contra el origen y por eso necesita el subpath. NO usar en un
+     * `redirect()`/`url()->to()` server-side: esos YA anteponen la raiz de la peticion (con el
+     * subdirectorio) y el subpath saldria DUPLICADO. Para redirects usa `route($name, absolute: false)`.
      */
     public static function path(string $name): string
     {

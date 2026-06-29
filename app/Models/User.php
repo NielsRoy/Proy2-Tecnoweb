@@ -3,7 +3,6 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
-use App\Support\Url;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -13,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Route;
 
 /**
  * @property int $id
@@ -195,10 +195,14 @@ class User extends Authenticatable
     }
 
     /**
-     * URL de aterrizaje tras iniciar sesion (path relativo, respeta el subdirectorio).
-     * Devuelve la primera ruta navegable del menu del usuario (ya ordenado por orden);
-     * si ningun modulo tiene pagina construida (o no tiene modulos), cae a la
-     * configuracion de perfil como refugio para que igual pueda entrar a configurarse.
+     * URL de aterrizaje tras iniciar sesion. Devuelve la primera ruta navegable del menu del
+     * usuario (ya ordenado por orden); si ningun modulo tiene pagina construida (o no tiene
+     * modulos), cae a la configuracion de perfil como refugio para que igual pueda configurarse.
+     *
+     * OJO: devuelve un path SIN el subdirectorio (p. ej. "/dashboard"). Se consume en un
+     * `redirect()` server-side, y `redirect()`/`url()->to()` YA antepone la raiz de la peticion
+     * (que incluye el subdirectorio). Si aqui se devolviera el subpath, saldria DUPLICADO. (En
+     * cambio, los hrefs del menu para Inertia <Link> SI llevan el subpath; ver App\Support\Url.)
      */
     public function urlInicio(): string
     {
@@ -208,19 +212,19 @@ class User extends Authenticatable
             }
         }
 
-        return Url::path('profile.edit');
+        return route('profile.edit', absolute: false);
     }
 
     /**
      * Ruta navegable del modulo (si su ruta existe), si no busca recursivamente en sus hijos.
-     * Mismo criterio que HandleInertiaRequests::resolverHrefs() (Url::pathSiExiste).
+     * Path SIN subdirectorio (lo usa urlInicio() para un redirect server-side; ver su nota).
      *
      * @param  array<string, mixed>  $modulo
      */
     private function primeraRutaNavegable(array $modulo): ?string
     {
-        if ($url = Url::pathSiExiste($modulo['ruta'] ?? null)) {
-            return $url;
+        if (! empty($modulo['ruta']) && Route::has($modulo['ruta'])) {
+            return route($modulo['ruta'], absolute: false);
         }
 
         foreach ($modulo['hijos'] ?? [] as $hijo) {
