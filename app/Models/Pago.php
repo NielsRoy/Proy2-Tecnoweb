@@ -26,6 +26,20 @@ class Pago extends Model
 {
     protected $table = 'pago';
 
+    // metodo de pago (qr queda para el requisito #10, aun no implementado)
+    public const METODO_EFECTIVO = 'efectivo';
+
+    public const METODO_TRANSFERENCIA = 'transferencia';
+
+    public const METODO_TARJETA = 'tarjeta';
+
+    public const METODO_QR = 'qr';
+
+    // estado de la cuota
+    public const ESTADO_PENDIENTE = 'pendiente';
+
+    public const ESTADO_PAGADO = 'pagado';
+
     protected function casts(): array
     {
         return [
@@ -39,5 +53,27 @@ class Pago extends Model
     public function venta(): BelongsTo
     {
         return $this->belongsTo(Venta::class, 'venta_id');
+    }
+
+    /**
+     * Salda una cuota: la marca pagada hoy con el metodo dado. Si era la ultima cuota pendiente
+     * de su venta, deja la venta como 'pagada'. Lo usan la venta al contado (paga al registrarse)
+     * y el modulo Pagos (cobro de cuotas a credito). DEBE llamarse dentro de una transaccion.
+     */
+    public static function saldar(self $cuota, string $metodo): void
+    {
+        $cuota->update([
+            'fecha_pago' => today()->toDateString(),
+            'metodo' => $metodo,
+            'estado' => self::ESTADO_PAGADO,
+        ]);
+
+        $quedanPendientes = self::where('venta_id', $cuota->venta_id)
+            ->where('estado', self::ESTADO_PENDIENTE)
+            ->exists();
+
+        if (! $quedanPendientes) {
+            $cuota->venta()->update(['estado_pago' => Venta::PAGO_PAGADA]);
+        }
     }
 }

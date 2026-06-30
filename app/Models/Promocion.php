@@ -24,6 +24,10 @@ class Promocion extends Model
 {
     protected $table = 'promocion';
 
+    public const TIPO_PORCENTAJE = 'porcentaje';
+
+    public const TIPO_MONTO = 'monto';
+
     protected function casts(): array
     {
         return [
@@ -37,5 +41,27 @@ class Promocion extends Model
     public function producto(): BelongsTo
     {
         return $this->belongsTo(Producto::class, 'producto_id');
+    }
+
+    /** Promos VIGENTES hoy: activas y con la fecha de hoy dentro del rango. */
+    public function scopeVigente($query)
+    {
+        $hoy = today()->toDateString();
+
+        return $query->where('est', true)
+            ->whereDate('fecha_inicio', '<=', $hoy)
+            ->whereDate('fecha_fin', '>=', $hoy);
+    }
+
+    /** Precio unitario con el descuento aplicado (nunca negativo), redondeado a 2 decimales. */
+    public function precioConDescuento(float $precioBase): float
+    {
+        $valor = (float) $this->valor;
+
+        $precio = $this->tipo_descuento === self::TIPO_PORCENTAJE
+            ? $precioBase * (1 - $valor / 100)
+            : $precioBase - $valor;
+
+        return round(max(0, $precio), 2);
     }
 }

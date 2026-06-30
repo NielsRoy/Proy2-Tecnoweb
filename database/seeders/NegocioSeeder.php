@@ -117,6 +117,7 @@ class NegocioSeeder extends Seeder
                     'tipo_pago' => 'contado',
                     'numero_cuotas' => 1,
                     'estado_pago' => 'pagada',
+                    'estado' => 'registrada',
                 ]);
 
                 $lineas = [

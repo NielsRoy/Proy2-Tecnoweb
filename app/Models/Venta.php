@@ -19,11 +19,27 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $tipo_pago
  * @property int $numero_cuotas
  * @property string $estado_pago
+ * @property string $estado
  */
-#[Fillable(['cliente_id', 'fecha_venta', 'direccion_envio', 'monto_total', 'tipo_pago', 'numero_cuotas', 'estado_pago'])]
+#[Fillable(['cliente_id', 'fecha_venta', 'direccion_envio', 'monto_total', 'tipo_pago', 'numero_cuotas', 'estado_pago', 'estado'])]
 class Venta extends Model
 {
     protected $table = 'venta';
+
+    // estado (de la venta, no del pago)
+    public const ESTADO_REGISTRADA = 'registrada';
+
+    public const ESTADO_ANULADA = 'anulada';
+
+    // tipo_pago
+    public const TIPO_CONTADO = 'contado';
+
+    public const TIPO_CREDITO = 'credito';
+
+    // estado_pago
+    public const PAGO_PENDIENTE = 'pendiente';
+
+    public const PAGO_PAGADA = 'pagada';
 
     protected function casts(): array
     {

@@ -73,11 +73,12 @@ return new class extends Migration
             $table->id();
             $table->foreignId('cliente_id')->constrained('users')->restrictOnDelete();
             $table->date('fecha_venta');
-            $table->text('direccion_envio');
+            $table->text('direccion_envio')->nullable(); // opcional en venta admin; requerida cuando el cliente compra (futuro modulo tienda)
             $table->decimal('monto_total', 10, 2);
             $table->string('tipo_pago')->default('contado');     // 'contado' | 'credito'
             $table->integer('numero_cuotas')->default(1);        // 1 contado, >=2 credito
             $table->string('estado_pago')->default('pendiente'); // 'pendiente' | 'pagada'
+            $table->string('estado')->default('registrada');     // 'registrada' | 'anulada' (anular devuelve stock)
             $table->timestamps();
         });
 
