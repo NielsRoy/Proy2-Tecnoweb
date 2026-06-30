@@ -2,23 +2,31 @@
 
 use App\Http\Controllers\AccesoController;
 use App\Http\Controllers\BitacoraController;
+use App\Http\Controllers\CarritoController;
 use App\Http\Controllers\CompraController;
 use App\Http\Controllers\InventarioController;
 use App\Http\Controllers\PagoController;
 use App\Http\Controllers\ProductoController;
 use App\Http\Controllers\PromocionController;
+use App\Http\Controllers\TiendaController;
 use App\Http\Controllers\VentaController;
 use App\Http\Controllers\UsuarioController;
 use Illuminate\Support\Facades\Route;
 
 Route::inertia('/', 'Welcome')->name('home');
 
-// Inicio: pagina de aterrizaje fija para TODO usuario autenticado. NO va en la matriz de acceso
-// (solo 'auth', sin 'permiso:') -> no se puede desactivar por rol. Destino tras login/registro,
-// del logo y del boton "Ingresar al sistema".
-Route::inertia('inicio', 'Inicio')
-    ->middleware('auth')
-    ->name('inicio');
+// Inicio = TIENDA autoservicio: catalogo + carrito + checkout. De LIBRE ACCESO para TODO usuario
+// autenticado (solo 'auth', sin 'permiso:') -> no va en la matriz ni se desactiva por rol. Es el
+// destino tras login/registro, del logo y del boton "Ingresar al sistema".
+Route::middleware('auth')->group(function () {
+    Route::get('inicio', [TiendaController::class, 'index'])->name('inicio');
+
+    Route::get('carrito', [CarritoController::class, 'index'])->name('carrito.index');
+    Route::post('carrito', [CarritoController::class, 'agregar'])->name('carrito.agregar');
+    Route::put('carrito/{producto}', [CarritoController::class, 'actualizar'])->name('carrito.actualizar');
+    Route::delete('carrito/{producto}', [CarritoController::class, 'quitar'])->name('carrito.quitar');
+    Route::post('carrito/checkout', [CarritoController::class, 'checkout'])->name('carrito.checkout');
+});
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::inertia('dashboard', 'Dashboard')

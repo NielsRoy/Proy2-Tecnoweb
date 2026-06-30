@@ -9,6 +9,7 @@ use App\Models\Producto;
 use App\Models\Promocion;
 use App\Models\User;
 use App\Models\Venta;
+use App\Services\RegistrarVenta;
 use App\Support\PlanPago;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -104,111 +105,13 @@ class VentaController extends Controller
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, RegistrarVenta $registrar): RedirectResponse
     {
         $datos = $this->validar($request);
 
-        // 1) Calcular lineas en el server (precio con promo vigente) y validar stock.
-        [$lineas, $base] = $this->resolverLineas($datos['lineas']);
-
-        $esCredito = $datos['tipo_pago'] === Venta::TIPO_CREDITO;
-        $numeroCuotas = 1;
-        $montoTotal = $base;
-
-        // 2) Reglas de credito + bloqueo del cliente.
-        if ($esCredito) {
-            $numeroCuotas = (int) $datos['numero_cuotas'];
-            $cuotasMax = PlanPago::cuotasMaximas($base);
-
-            if ($cuotasMax === 0) {
-                throw ValidationException::withMessages([
-                    'tipo_pago' => 'El monto base ('.number_format($base, 2).') es menor al mínimo de Bs '
-                        .PlanPago::MONTO_MINIMO_CREDITO.' para vender a crédito.',
-                ]);
-            }
-            if ($numeroCuotas < 2 || $numeroCuotas > $cuotasMax) {
-                throw ValidationException::withMessages([
-                    'numero_cuotas' => "Para este monto el número de cuotas debe estar entre 2 y {$cuotasMax}.",
-                ]);
-            }
-
-            // Un solo plan a credito activo por cliente.
-            $tienePlanActivo = Venta::where('cliente_id', $datos['cliente_id'])
-                ->where('tipo_pago', Venta::TIPO_CREDITO)
-                ->where('estado_pago', Venta::PAGO_PENDIENTE)
-                ->where('estado', Venta::ESTADO_REGISTRADA)
-                ->exists();
-
-            if ($tienePlanActivo) {
-                throw ValidationException::withMessages([
-                    'cliente_id' => 'El cliente ya tiene un plan a crédito activo (solo se permite uno a la vez).',
-                ]);
-            }
-
-            $montoTotal = PlanPago::montoTotalCredito($base, $numeroCuotas);
-        }
-
-        // 3) Persistir todo en una transaccion.
-        DB::transaction(function () use ($datos, $lineas, $base, $montoTotal, $esCredito, $numeroCuotas) {
-            $venta = Venta::create([
-                'cliente_id' => $datos['cliente_id'],
-                'fecha_venta' => $datos['fecha_venta'],
-                'direccion_envio' => $datos['direccion_envio'],
-                'monto_total' => $montoTotal,
-                'tipo_pago' => $datos['tipo_pago'],
-                'numero_cuotas' => $numeroCuotas,
-                'estado_pago' => Venta::PAGO_PENDIENTE, // se vuelve 'pagada' al saldar (contado)
-                'estado' => Venta::ESTADO_REGISTRADA,
-            ]);
-
-            foreach ($lineas as $linea) {
-                $venta->detalles()->create([
-                    'producto_id' => $linea['producto']->id,
-                    'cantidad' => $linea['cantidad'],
-                    'precio_unitario' => $linea['precio_unitario'],
-                    'subtotal' => $linea['subtotal'],
-                    'promocion_id' => $linea['promocion_id'],
-                ]);
-
-                // La venta saca stock (motivo venta).
-                Inventario::registrarMovimiento(
-                    $linea['producto'],
-                    Inventario::SALIDA,
-                    $linea['cantidad'],
-                    Inventario::MOTIVO_VENTA,
-                    $datos['fecha_venta'],
-                );
-            }
-
-            if ($esCredito) {
-                // Cronograma de cuotas, todas pendientes.
-                foreach (PlanPago::cronograma($montoTotal, $numeroCuotas, $datos['fecha_venta']) as $cuota) {
-                    Pago::create([
-                        'venta_id' => $venta->id,
-                        'numero_cuota' => $cuota['numero_cuota'],
-                        'monto' => $cuota['monto'],
-                        'fecha_vencimiento' => $cuota['fecha_vencimiento'],
-                        'estado' => Pago::ESTADO_PENDIENTE,
-                    ]);
-                }
-            } else {
-                // Contado: una cuota que se salda ya con el metodo elegido (-> venta 'pagada').
-                $cuota = Pago::create([
-                    'venta_id' => $venta->id,
-                    'numero_cuota' => 1,
-                    'monto' => $montoTotal,
-                    'fecha_vencimiento' => $datos['fecha_venta'],
-                    'estado' => Pago::ESTADO_PENDIENTE,
-                ]);
-                Pago::saldar($cuota, $datos['metodo']);
-            }
-
-            Bitacora::registrar(
-                'crear',
-                "Registró la venta #{$venta->id} ({$venta->tipo_pago}, Bs {$montoTotal})",
-                'ventas',
-            );
-        });
+        // Toda la logica de negocio (lineas/stock/promo/credito/bloqueo/transaccion) vive en el
+        // servicio, compartido con la tienda autoservicio.
+        $registrar->ejecutar($datos);
 
         $this->toastExito('Venta registrada.');
 
@@ -288,47 +191,6 @@ class VentaController extends Controller
         $this->toastExito('Venta anulada y stock devuelto.');
 
         return redirect()->route('ventas.index');
-    }
-
-    /**
-     * Resuelve las lineas con el precio del server (promo vigente aplicada), valida stock y devuelve
-     * [lineas, base]. Lanza ValidationException en espanol si falta stock.
-     *
-     * @param  array<int, array{producto_id:int, cantidad:int}>  $lineasInput
-     * @return array{0: array<int, array<string, mixed>>, 1: float}
-     */
-    private function resolverLineas(array $lineasInput): array
-    {
-        $promosVigentes = Promocion::vigente()->get()->keyBy('producto_id');
-        $lineas = [];
-        $base = 0;
-
-        foreach ($lineasInput as $i => $entrada) {
-            $producto = Producto::where('est', true)->findOrFail($entrada['producto_id']);
-
-            if ($producto->stock < $entrada['cantidad']) {
-                throw ValidationException::withMessages([
-                    "lineas.{$i}.cantidad" => "Stock insuficiente: «{$producto->nombre}» tiene {$producto->stock} unidades.",
-                ]);
-            }
-
-            $promo = $promosVigentes->get($producto->id);
-            $precioUnitario = $promo
-                ? $promo->precioConDescuento((float) $producto->precio)
-                : (float) $producto->precio;
-            $subtotal = round($entrada['cantidad'] * $precioUnitario, 2);
-            $base += $subtotal;
-
-            $lineas[] = [
-                'producto' => $producto,
-                'cantidad' => $entrada['cantidad'],
-                'precio_unitario' => $precioUnitario,
-                'subtotal' => $subtotal,
-                'promocion_id' => $promo?->id,
-            ];
-        }
-
-        return [$lineas, round($base, 2)];
     }
 
     /**
