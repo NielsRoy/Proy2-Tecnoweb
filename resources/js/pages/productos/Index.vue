@@ -29,7 +29,10 @@ type ProductoItem = {
 
 type Filtros = {
     categoria_id: number | null;
-    q: string | null;
+    precio_min: number | null;
+    precio_max: number | null;
+    stock_min: number | null;
+    stock_max: number | null;
 };
 
 const props = defineProps<{
@@ -52,7 +55,14 @@ const filtros = reactive({
         props.filtros.categoria_id != null
             ? String(props.filtros.categoria_id)
             : '',
-    q: props.filtros.q ?? '',
+    precio_min:
+        props.filtros.precio_min != null ? String(props.filtros.precio_min) : '',
+    precio_max:
+        props.filtros.precio_max != null ? String(props.filtros.precio_max) : '',
+    stock_min:
+        props.filtros.stock_min != null ? String(props.filtros.stock_min) : '',
+    stock_max:
+        props.filtros.stock_max != null ? String(props.filtros.stock_max) : '',
 });
 
 function queryFiltros(): Record<string, string> {
@@ -75,7 +85,10 @@ function aplicar(): void {
 
 function limpiar(): void {
     filtros.categoria_id = '';
-    filtros.q = '';
+    filtros.precio_min = '';
+    filtros.precio_max = '';
+    filtros.stock_min = '';
+    filtros.stock_max = '';
     router.get(index().url, {}, { preserveScroll: true, replace: true });
 }
 
@@ -122,7 +135,7 @@ function confirmarEliminar(): void {
 
         <!-- Filtros -->
         <div
-            class="grid gap-3 rounded-xl border border-sidebar-border/70 p-3 sm:grid-cols-2 lg:grid-cols-3 dark:border-sidebar-border"
+            class="grid gap-3 rounded-xl border border-sidebar-border/70 p-3 sm:grid-cols-2 lg:grid-cols-6 dark:border-sidebar-border"
         >
             <div class="grid gap-1.5">
                 <Label for="f-categoria">Categoría</Label>
@@ -142,11 +155,50 @@ function confirmarEliminar(): void {
                 </select>
             </div>
             <div class="grid gap-1.5">
-                <Label for="f-buscar">Buscar (nombre)</Label>
+                <Label for="f-precio-min">Precio mín (Bs)</Label>
                 <Input
-                    id="f-buscar"
-                    v-model="filtros.q"
-                    placeholder="Nombre del producto"
+                    id="f-precio-min"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    v-model="filtros.precio_min"
+                    placeholder="0"
+                    @keyup.enter="aplicar"
+                />
+            </div>
+            <div class="grid gap-1.5">
+                <Label for="f-precio-max">Precio máx (Bs)</Label>
+                <Input
+                    id="f-precio-max"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    v-model="filtros.precio_max"
+                    placeholder="—"
+                    @keyup.enter="aplicar"
+                />
+            </div>
+            <div class="grid gap-1.5">
+                <Label for="f-stock-min">Stock mín</Label>
+                <Input
+                    id="f-stock-min"
+                    type="number"
+                    min="0"
+                    step="1"
+                    v-model="filtros.stock_min"
+                    placeholder="0"
+                    @keyup.enter="aplicar"
+                />
+            </div>
+            <div class="grid gap-1.5">
+                <Label for="f-stock-max">Stock máx</Label>
+                <Input
+                    id="f-stock-max"
+                    type="number"
+                    min="0"
+                    step="1"
+                    v-model="filtros.stock_max"
+                    placeholder="—"
                     @keyup.enter="aplicar"
                 />
             </div>

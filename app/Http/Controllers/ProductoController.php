@@ -71,22 +71,33 @@ class ProductoController extends Controller
     }
 
     /**
-     * Consulta del catálogo activo aplicando filtros (categoría + búsqueda por nombre; sin fechas).
-     * Compartida por index y reporte.
+     * Consulta del catálogo activo aplicando filtros (categoría + rangos de precio y de stock; sin
+     * fechas). Compartida por index y reporte.
      *
      * @return array{0: array<string, mixed>, 1: Builder}
      */
     private function consultaFiltrada(Request $request): array
     {
+        // Lee un valor numérico opcional (vacío = sin filtro); conserva el 0 como valor válido.
+        $num = fn (string $clave) => $request->input($clave) !== null && $request->input($clave) !== ''
+            ? (float) $request->input($clave)
+            : null;
+
         $filtros = [
             'categoria_id' => $request->integer('categoria_id') ?: null,
-            'q' => $request->string('q')->toString() ?: null,
+            'precio_min' => $num('precio_min'),
+            'precio_max' => $num('precio_max'),
+            'stock_min' => $num('stock_min'),
+            'stock_max' => $num('stock_max'),
         ];
 
         $query = Producto::where('activo', true)
             ->with('categoria:id,nombre')
             ->when($filtros['categoria_id'], fn ($q, $id) => $q->where('categoria_id', $id))
-            ->when($filtros['q'], fn ($q, $t) => $q->where('nombre', 'like', "%{$t}%"))
+            ->when($filtros['precio_min'] !== null, fn ($q) => $q->where('precio', '>=', $filtros['precio_min']))
+            ->when($filtros['precio_max'] !== null, fn ($q) => $q->where('precio', '<=', $filtros['precio_max']))
+            ->when($filtros['stock_min'] !== null, fn ($q) => $q->where('stock', '>=', $filtros['stock_min']))
+            ->when($filtros['stock_max'] !== null, fn ($q) => $q->where('stock', '<=', $filtros['stock_max']))
             ->orderBy('nombre');
 
         return [$filtros, $query];
@@ -99,8 +110,13 @@ class ProductoController extends Controller
         if ($f['categoria_id']) {
             $partes[] = 'Categoría: '.(Categoria::find($f['categoria_id'])?->nombre ?? $f['categoria_id']);
         }
-        if ($f['q']) {
-            $partes[] = 'Búsqueda: "'.$f['q'].'"';
+        if ($f['precio_min'] !== null || $f['precio_max'] !== null) {
+            $partes[] = 'Precio: '.($f['precio_min'] !== null ? 'Bs '.$f['precio_min'] : '—')
+                .' a '.($f['precio_max'] !== null ? 'Bs '.$f['precio_max'] : '—');
+        }
+        if ($f['stock_min'] !== null || $f['stock_max'] !== null) {
+            $partes[] = 'Stock: '.($f['stock_min'] !== null ? (int) $f['stock_min'] : '—')
+                .' a '.($f['stock_max'] !== null ? (int) $f['stock_max'] : '—');
         }
         $txt = $partes ? implode(' · ', $partes) : 'Catálogo activo completo';
 

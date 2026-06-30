@@ -43,6 +43,7 @@ class UsuarioController extends Controller
             'name' => $u->name,
             'email' => $u->email,
             'roles' => $u->roles->pluck('nombre')->values(),
+            'creado' => $u->created_at?->format('d/m/Y'),
         ]);
 
         return Inertia::render('usuarios/Index', [
@@ -65,11 +66,12 @@ class UsuarioController extends Controller
         [$filtros, $query] = $this->consultaFiltrada($request);
         $usuarios = $query->get();
 
-        $columnas = ['Nombre', 'Correo electrónico', 'Rol(es)'];
+        $columnas = ['Nombre', 'Correo electrónico', 'Rol(es)', 'Creado'];
         $filas = $usuarios->map(fn (User $u) => [
             $u->name,
             $u->email,
             $u->roles->pluck('nombre')->implode(', ') ?: '—',
+            $u->created_at?->format('d/m/Y'),
         ])->all();
 
         return Reporte::generar($request->string('formato')->toString(), [
@@ -77,12 +79,12 @@ class UsuarioController extends Controller
             'subtitulo' => $this->descripcionFiltros($filtros),
             'columnas' => $columnas,
             'filas' => $filas,
-            'filaTotal' => ['Total: '.$usuarios->count().' usuarios', '', ''],
+            'filaTotal' => ['Total: '.$usuarios->count().' usuarios', '', '', ''],
         ], 'usuarios');
     }
 
     /**
-     * Consulta de usuarios aplicando filtros (rol + búsqueda por nombre/correo; sin fechas).
+     * Consulta de usuarios aplicando filtros (rol + rango de fechas de creación).
      * Compartida por index y reporte.
      *
      * @return array{0: array<string, mixed>, 1: Builder}
@@ -91,7 +93,8 @@ class UsuarioController extends Controller
     {
         $filtros = [
             'rol_id' => $request->integer('rol_id') ?: null,
-            'q' => $request->string('q')->toString() ?: null,
+            'desde' => $request->date('desde')?->toDateString(),
+            'hasta' => $request->date('hasta')?->toDateString(),
         ];
 
         $query = User::query()
@@ -100,9 +103,8 @@ class UsuarioController extends Controller
                 'roles',
                 fn ($r) => $r->where('rol.id', $id)->where('usuario_rol.activo', true),
             ))
-            ->when($filtros['q'], fn ($q, $t) => $q->where(
-                fn ($w) => $w->where('name', 'like', "%{$t}%")->orWhere('email', 'like', "%{$t}%"),
-            ))
+            ->when($filtros['desde'], fn ($q, $d) => $q->whereDate('created_at', '>=', $d))
+            ->when($filtros['hasta'], fn ($q, $h) => $q->whereDate('created_at', '<=', $h))
             ->orderBy('name');
 
         return [$filtros, $query];
@@ -115,8 +117,11 @@ class UsuarioController extends Controller
         if ($f['rol_id']) {
             $partes[] = 'Rol: '.(Rol::find($f['rol_id'])?->nombre ?? $f['rol_id']);
         }
-        if ($f['q']) {
-            $partes[] = 'Búsqueda: "'.$f['q'].'"';
+        if ($f['desde']) {
+            $partes[] = 'Creados desde: '.$f['desde'];
+        }
+        if ($f['hasta']) {
+            $partes[] = 'Creados hasta: '.$f['hasta'];
         }
         $txt = $partes ? implode(' · ', $partes) : 'Todos los usuarios';
 

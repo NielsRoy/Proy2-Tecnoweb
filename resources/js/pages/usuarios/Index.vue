@@ -22,11 +22,13 @@ type UsuarioItem = {
     name: string;
     email: string;
     roles: string[];
+    creado: string | null;
 };
 
 type Filtros = {
     rol_id: number | null;
-    q: string | null;
+    desde: string | null;
+    hasta: string | null;
 };
 
 const props = defineProps<{
@@ -47,7 +49,8 @@ defineOptions({
 
 const filtros = reactive({
     rol_id: props.filtros.rol_id != null ? String(props.filtros.rol_id) : '',
-    q: props.filtros.q ?? '',
+    desde: props.filtros.desde ?? '',
+    hasta: props.filtros.hasta ?? '',
 });
 
 function queryFiltros(): Record<string, string> {
@@ -70,7 +73,8 @@ function aplicar(): void {
 
 function limpiar(): void {
     filtros.rol_id = '';
-    filtros.q = '';
+    filtros.desde = '';
+    filtros.hasta = '';
     router.get(index().url, {}, { preserveScroll: true, replace: true });
 }
 
@@ -118,7 +122,7 @@ function confirmarEliminar(): void {
 
         <!-- Filtros -->
         <div
-            class="grid gap-3 rounded-xl border border-sidebar-border/70 p-3 sm:grid-cols-2 lg:grid-cols-3 dark:border-sidebar-border"
+            class="grid gap-3 rounded-xl border border-sidebar-border/70 p-3 sm:grid-cols-2 lg:grid-cols-4 dark:border-sidebar-border"
         >
             <div class="grid gap-1.5">
                 <Label for="f-rol">Rol</Label>
@@ -130,13 +134,12 @@ function confirmarEliminar(): void {
                 </select>
             </div>
             <div class="grid gap-1.5">
-                <Label for="f-buscar">Buscar (nombre o correo)</Label>
-                <Input
-                    id="f-buscar"
-                    v-model="filtros.q"
-                    placeholder="Nombre o correo"
-                    @keyup.enter="aplicar"
-                />
+                <Label for="f-desde">Creados desde</Label>
+                <Input id="f-desde" type="date" v-model="filtros.desde" />
+            </div>
+            <div class="grid gap-1.5">
+                <Label for="f-hasta">Creados hasta</Label>
+                <Input id="f-hasta" type="date" v-model="filtros.hasta" />
             </div>
             <div class="flex items-end gap-2">
                 <Button @click="aplicar">Filtrar</Button>
@@ -157,6 +160,7 @@ function confirmarEliminar(): void {
                             Correo electrónico
                         </th>
                         <th class="p-3 text-left font-medium">Rol</th>
+                        <th class="p-3 text-left font-medium">Creado</th>
                         <th
                             v-if="puedeEditar || puedeEliminar"
                             class="p-3 text-right font-medium"
@@ -192,6 +196,9 @@ function confirmarEliminar(): void {
                                 </Badge>
                             </span>
                         </td>
+                        <td class="p-3 whitespace-nowrap text-muted-foreground">
+                            {{ usuario.creado ?? '—' }}
+                        </td>
                         <td
                             v-if="puedeEditar || puedeEliminar"
                             class="p-3 text-right"
@@ -221,7 +228,7 @@ function confirmarEliminar(): void {
                     </tr>
                     <tr v-if="usuarios.length === 0">
                         <td
-                            colspan="4"
+                            colspan="5"
                             class="p-6 text-center text-muted-foreground"
                         >
                             No hay usuarios que coincidan con los filtros.
