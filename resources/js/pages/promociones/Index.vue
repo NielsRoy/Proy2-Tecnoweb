@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { reactive, ref } from 'vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -12,6 +12,8 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import BotonesReporte from '@/components/BotonesReporte.vue';
 import { create, destroy, edit, index, reporte } from '@/routes/promociones';
 
@@ -26,8 +28,16 @@ type PromocionItem = {
     vigente: boolean;
 };
 
-defineProps<{
+type Filtros = {
+    producto_id: number | null;
+    desde: string | null;
+    hasta: string | null;
+};
+
+const props = defineProps<{
     promociones: PromocionItem[];
+    filtros: Filtros;
+    productos: { id: number; nombre: string }[];
     puedeCrear: boolean;
     puedeEditar: boolean;
     puedeEliminar: boolean;
@@ -38,6 +48,43 @@ defineOptions({
         breadcrumbs: [{ title: 'Promociones', href: index() }],
     },
 });
+
+const filtros = reactive({
+    producto_id:
+        props.filtros.producto_id != null
+            ? String(props.filtros.producto_id)
+            : '',
+    desde: props.filtros.desde ?? '',
+    hasta: props.filtros.hasta ?? '',
+});
+
+function queryFiltros(): Record<string, string> {
+    const query: Record<string, string> = {};
+    Object.entries(filtros).forEach(([clave, valor]) => {
+        if (valor !== '' && valor != null) {
+            query[clave] = String(valor);
+        }
+    });
+    return query;
+}
+
+function aplicar(): void {
+    router.get(index().url, queryFiltros(), {
+        preserveScroll: true,
+        preserveState: true,
+        replace: true,
+    });
+}
+
+function limpiar(): void {
+    filtros.producto_id = '';
+    filtros.desde = '';
+    filtros.hasta = '';
+    router.get(index().url, {}, { preserveScroll: true, replace: true });
+}
+
+const selectClass =
+    'flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm dark:bg-input/30';
 
 const promocionAEliminar = ref<PromocionItem | null>(null);
 const eliminando = ref(false);
@@ -74,12 +121,47 @@ function descuento(p: PromocionItem): string {
                 </p>
             </div>
             <div class="flex flex-wrap items-center gap-2">
-                <BotonesReporte :url="reporte().url" />
+                <BotonesReporte :url="reporte().url" :query="queryFiltros()" />
                 <Button v-if="puedeCrear" as-child>
                     <Link :href="create()">Nueva promoción</Link>
                 </Button>
             </div>
         </header>
+
+        <!-- Filtros -->
+        <div
+            class="grid gap-3 rounded-xl border border-sidebar-border/70 p-3 sm:grid-cols-2 lg:grid-cols-4 dark:border-sidebar-border"
+        >
+            <div class="grid gap-1.5">
+                <Label for="f-producto">Producto</Label>
+                <select
+                    id="f-producto"
+                    v-model="filtros.producto_id"
+                    :class="selectClass"
+                >
+                    <option value="">Todos</option>
+                    <option
+                        v-for="p in productos"
+                        :key="p.id"
+                        :value="String(p.id)"
+                    >
+                        {{ p.nombre }}
+                    </option>
+                </select>
+            </div>
+            <div class="grid gap-1.5">
+                <Label for="f-desde">Activas desde</Label>
+                <Input id="f-desde" type="date" v-model="filtros.desde" />
+            </div>
+            <div class="grid gap-1.5">
+                <Label for="f-hasta">Activas hasta</Label>
+                <Input id="f-hasta" type="date" v-model="filtros.hasta" />
+            </div>
+            <div class="flex items-end gap-2">
+                <Button @click="aplicar">Filtrar</Button>
+                <Button variant="outline" @click="limpiar">Limpiar</Button>
+            </div>
+        </div>
 
         <div
             class="overflow-x-auto rounded-xl border border-sidebar-border/70 dark:border-sidebar-border"
@@ -150,7 +232,7 @@ function descuento(p: PromocionItem): string {
                             colspan="6"
                             class="p-6 text-center text-muted-foreground"
                         >
-                            No hay promociones registradas.
+                            No hay promociones que coincidan con los filtros.
                         </td>
                     </tr>
                 </tbody>

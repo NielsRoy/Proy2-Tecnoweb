@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { reactive, ref } from 'vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -12,6 +12,8 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import BotonesReporte from '@/components/BotonesReporte.vue';
 import { create, destroy, edit, index, reporte } from '@/routes/usuarios';
 
@@ -22,8 +24,15 @@ type UsuarioItem = {
     roles: string[];
 };
 
-defineProps<{
+type Filtros = {
+    rol_id: number | null;
+    q: string | null;
+};
+
+const props = defineProps<{
     usuarios: UsuarioItem[];
+    filtros: Filtros;
+    roles: { id: number; nombre: string }[];
     puedeCrear: boolean;
     puedeEditar: boolean;
     puedeEliminar: boolean;
@@ -35,6 +44,38 @@ defineOptions({
         breadcrumbs: [{ title: 'Usuarios', href: index() }],
     },
 });
+
+const filtros = reactive({
+    rol_id: props.filtros.rol_id != null ? String(props.filtros.rol_id) : '',
+    q: props.filtros.q ?? '',
+});
+
+function queryFiltros(): Record<string, string> {
+    const query: Record<string, string> = {};
+    Object.entries(filtros).forEach(([clave, valor]) => {
+        if (valor !== '' && valor != null) {
+            query[clave] = String(valor);
+        }
+    });
+    return query;
+}
+
+function aplicar(): void {
+    router.get(index().url, queryFiltros(), {
+        preserveScroll: true,
+        preserveState: true,
+        replace: true,
+    });
+}
+
+function limpiar(): void {
+    filtros.rol_id = '';
+    filtros.q = '';
+    router.get(index().url, {}, { preserveScroll: true, replace: true });
+}
+
+const selectClass =
+    'flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm dark:bg-input/30';
 
 // Dialog de confirmacion de borrado: guarda el usuario a eliminar (o null si cerrado).
 const usuarioAEliminar = ref<UsuarioItem | null>(null);
@@ -68,12 +109,40 @@ function confirmarEliminar(): void {
                 </p>
             </div>
             <div class="flex flex-wrap items-center gap-2">
-                <BotonesReporte :url="reporte().url" />
+                <BotonesReporte :url="reporte().url" :query="queryFiltros()" />
                 <Button v-if="puedeCrear" as-child>
                     <Link :href="create()">Nuevo usuario</Link>
                 </Button>
             </div>
         </header>
+
+        <!-- Filtros -->
+        <div
+            class="grid gap-3 rounded-xl border border-sidebar-border/70 p-3 sm:grid-cols-2 lg:grid-cols-3 dark:border-sidebar-border"
+        >
+            <div class="grid gap-1.5">
+                <Label for="f-rol">Rol</Label>
+                <select id="f-rol" v-model="filtros.rol_id" :class="selectClass">
+                    <option value="">Todos</option>
+                    <option v-for="r in roles" :key="r.id" :value="String(r.id)">
+                        {{ r.nombre }}
+                    </option>
+                </select>
+            </div>
+            <div class="grid gap-1.5">
+                <Label for="f-buscar">Buscar (nombre o correo)</Label>
+                <Input
+                    id="f-buscar"
+                    v-model="filtros.q"
+                    placeholder="Nombre o correo"
+                    @keyup.enter="aplicar"
+                />
+            </div>
+            <div class="flex items-end gap-2">
+                <Button @click="aplicar">Filtrar</Button>
+                <Button variant="outline" @click="limpiar">Limpiar</Button>
+            </div>
+        </div>
 
         <div
             class="overflow-x-auto rounded-xl border border-sidebar-border/70 dark:border-sidebar-border"
@@ -155,7 +224,7 @@ function confirmarEliminar(): void {
                             colspan="4"
                             class="p-6 text-center text-muted-foreground"
                         >
-                            No hay usuarios registrados.
+                            No hay usuarios que coincidan con los filtros.
                         </td>
                     </tr>
                 </tbody>

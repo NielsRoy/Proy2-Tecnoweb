@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
 import { ImageOff } from '@lucide/vue';
-import { ref } from 'vue';
+import { reactive, ref } from 'vue';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -12,6 +12,8 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import BotonesReporte from '@/components/BotonesReporte.vue';
 import { create, destroy, edit, index, reporte } from '@/routes/productos';
 
@@ -19,13 +21,21 @@ type ProductoItem = {
     id: number;
     nombre: string;
     descripcion: string | null;
+    categoria: string | null;
     precio: string;
     stock: number;
     foto_url: string | null;
 };
 
-defineProps<{
+type Filtros = {
+    categoria_id: number | null;
+    q: string | null;
+};
+
+const props = defineProps<{
     productos: ProductoItem[];
+    filtros: Filtros;
+    categorias: { id: number; nombre: string }[];
     puedeCrear: boolean;
     puedeEditar: boolean;
     puedeEliminar: boolean;
@@ -36,6 +46,41 @@ defineOptions({
         breadcrumbs: [{ title: 'Productos', href: index() }],
     },
 });
+
+const filtros = reactive({
+    categoria_id:
+        props.filtros.categoria_id != null
+            ? String(props.filtros.categoria_id)
+            : '',
+    q: props.filtros.q ?? '',
+});
+
+function queryFiltros(): Record<string, string> {
+    const query: Record<string, string> = {};
+    Object.entries(filtros).forEach(([clave, valor]) => {
+        if (valor !== '' && valor != null) {
+            query[clave] = String(valor);
+        }
+    });
+    return query;
+}
+
+function aplicar(): void {
+    router.get(index().url, queryFiltros(), {
+        preserveScroll: true,
+        preserveState: true,
+        replace: true,
+    });
+}
+
+function limpiar(): void {
+    filtros.categoria_id = '';
+    filtros.q = '';
+    router.get(index().url, {}, { preserveScroll: true, replace: true });
+}
+
+const selectClass =
+    'flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm dark:bg-input/30';
 
 const productoAEliminar = ref<ProductoItem | null>(null);
 const eliminando = ref(false);
@@ -68,12 +113,48 @@ function confirmarEliminar(): void {
                 </p>
             </div>
             <div class="flex flex-wrap items-center gap-2">
-                <BotonesReporte :url="reporte().url" />
+                <BotonesReporte :url="reporte().url" :query="queryFiltros()" />
                 <Button v-if="puedeCrear" as-child>
                     <Link :href="create()">Nuevo producto</Link>
                 </Button>
             </div>
         </header>
+
+        <!-- Filtros -->
+        <div
+            class="grid gap-3 rounded-xl border border-sidebar-border/70 p-3 sm:grid-cols-2 lg:grid-cols-3 dark:border-sidebar-border"
+        >
+            <div class="grid gap-1.5">
+                <Label for="f-categoria">Categoría</Label>
+                <select
+                    id="f-categoria"
+                    v-model="filtros.categoria_id"
+                    :class="selectClass"
+                >
+                    <option value="">Todas</option>
+                    <option
+                        v-for="c in categorias"
+                        :key="c.id"
+                        :value="String(c.id)"
+                    >
+                        {{ c.nombre }}
+                    </option>
+                </select>
+            </div>
+            <div class="grid gap-1.5">
+                <Label for="f-buscar">Buscar (nombre)</Label>
+                <Input
+                    id="f-buscar"
+                    v-model="filtros.q"
+                    placeholder="Nombre del producto"
+                    @keyup.enter="aplicar"
+                />
+            </div>
+            <div class="flex items-end gap-2">
+                <Button @click="aplicar">Filtrar</Button>
+                <Button variant="outline" @click="limpiar">Limpiar</Button>
+            </div>
+        </div>
 
         <div
             class="overflow-x-auto rounded-xl border border-sidebar-border/70 dark:border-sidebar-border"
@@ -85,6 +166,7 @@ function confirmarEliminar(): void {
                     >
                         <th class="p-3 text-left font-medium">Foto</th>
                         <th class="p-3 text-left font-medium">Nombre</th>
+                        <th class="p-3 text-left font-medium">Categoría</th>
                         <th class="p-3 text-right font-medium">Precio</th>
                         <th class="p-3 text-right font-medium">Stock</th>
                         <th
@@ -124,6 +206,14 @@ function confirmarEliminar(): void {
                                 {{ producto.descripcion }}
                             </div>
                         </td>
+                        <td class="p-3">
+                            <span v-if="producto.categoria">
+                                {{ producto.categoria }}
+                            </span>
+                            <span v-else class="text-muted-foreground">
+                                Sin categoría
+                            </span>
+                        </td>
                         <td class="p-3 text-right whitespace-nowrap">
                             Bs {{ producto.precio }}
                         </td>
@@ -154,10 +244,10 @@ function confirmarEliminar(): void {
                     </tr>
                     <tr v-if="productos.length === 0">
                         <td
-                            colspan="5"
+                            colspan="6"
                             class="p-6 text-center text-muted-foreground"
                         >
-                            No hay productos registrados.
+                            No hay productos que coincidan con los filtros.
                         </td>
                     </tr>
                 </tbody>

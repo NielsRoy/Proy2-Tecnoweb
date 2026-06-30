@@ -6,6 +6,7 @@ use App\Models\Bitacora;
 use App\Models\Producto;
 use App\Models\Promocion;
 use App\Support\Reporte;
+use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -23,40 +24,36 @@ class PromocionController extends Controller
     public function index(Request $request): Response
     {
         $hoy = today()->toDateString();
+        [$filtros, $query] = $this->consultaFiltrada($request);
 
-        $promociones = Promocion::with('producto:id,nombre')
-            ->where('activo', true)
-            ->orderByDesc('fecha_inicio')
-            ->get()
-            ->map(fn (Promocion $p) => [
-                'id' => $p->id,
-                'producto' => $p->producto?->nombre,
-                'nombre' => $p->nombre,
-                'tipo_descuento' => $p->tipo_descuento,
-                'valor' => $p->valor,
-                'fecha_inicio' => $p->fecha_inicio?->toDateString(),
-                'fecha_fin' => $p->fecha_fin?->toDateString(),
-                'vigente' => $p->fecha_inicio?->toDateString() <= $hoy
-                    && $p->fecha_fin?->toDateString() >= $hoy,
-            ]);
+        $promociones = $query->get()->map(fn (Promocion $p) => [
+            'id' => $p->id,
+            'producto' => $p->producto?->nombre,
+            'nombre' => $p->nombre,
+            'tipo_descuento' => $p->tipo_descuento,
+            'valor' => $p->valor,
+            'fecha_inicio' => $p->fecha_inicio?->toDateString(),
+            'fecha_fin' => $p->fecha_fin?->toDateString(),
+            'vigente' => $p->fecha_inicio?->toDateString() <= $hoy
+                && $p->fecha_fin?->toDateString() >= $hoy,
+        ]);
 
         return Inertia::render('promociones/Index', [
             'promociones' => $promociones,
+            'filtros' => $filtros,
+            'productos' => Producto::where('activo', true)->orderBy('nombre')->get(['id', 'nombre']),
             'puedeCrear' => $request->user()->tienePermiso('promociones', 'registrar'),
             'puedeEditar' => $request->user()->tienePermiso('promociones', 'modificar'),
             'puedeEliminar' => $request->user()->tienePermiso('promociones', 'eliminar'),
         ]);
     }
 
-    /** Reporte (PDF/Excel/CSV) de las promociones activas. Ruta con permiso:promociones,listar. */
+    /** Reporte (PDF/Excel/CSV) de las promociones activas (respeta los filtros). permiso:promociones,listar. */
     public function reporte(Request $request): mixed
     {
         $hoy = today()->toDateString();
-
-        $promociones = Promocion::with('producto:id,nombre')
-            ->where('activo', true)
-            ->orderByDesc('fecha_inicio')
-            ->get();
+        [$filtros, $query] = $this->consultaFiltrada($request);
+        $promociones = $query->get();
 
         $columnas = ['Producto', 'Promoción', 'Tipo', 'Valor', 'Desde', 'Hasta', 'Vigente'];
         $filas = $promociones->map(function (Promocion $p) use ($hoy) {
@@ -78,11 +75,54 @@ class PromocionController extends Controller
 
         return Reporte::generar($request->string('formato')->toString(), [
             'titulo' => 'Reporte de Promociones',
-            'subtitulo' => 'Promociones activas — Generado: '.now()->format('d/m/Y H:i'),
+            'subtitulo' => $this->descripcionFiltros($filtros),
             'columnas' => $columnas,
             'filas' => $filas,
             'filaTotal' => ['Total: '.$promociones->count().' promociones', '', '', '', '', '', ''],
         ], 'promociones');
+    }
+
+    /**
+     * Consulta de promociones activas aplicando filtros (producto + rango de fechas por solape).
+     * El solape con [desde, hasta] = la promo no termina antes de 'desde' ni empieza después de 'hasta'.
+     * Compartida por index y reporte.
+     *
+     * @return array{0: array<string, mixed>, 1: Builder}
+     */
+    private function consultaFiltrada(Request $request): array
+    {
+        $filtros = [
+            'producto_id' => $request->integer('producto_id') ?: null,
+            'desde' => $request->date('desde')?->toDateString(),
+            'hasta' => $request->date('hasta')?->toDateString(),
+        ];
+
+        $query = Promocion::with('producto:id,nombre')
+            ->where('activo', true)
+            ->when($filtros['producto_id'], fn ($q, $id) => $q->where('producto_id', $id))
+            ->when($filtros['desde'], fn ($q, $d) => $q->whereDate('fecha_fin', '>=', $d))
+            ->when($filtros['hasta'], fn ($q, $h) => $q->whereDate('fecha_inicio', '<=', $h))
+            ->orderByDesc('fecha_inicio');
+
+        return [$filtros, $query];
+    }
+
+    /** Texto legible de los filtros aplicados (para el subtitulo del reporte). */
+    private function descripcionFiltros(array $f): string
+    {
+        $partes = [];
+        if ($f['producto_id']) {
+            $partes[] = 'Producto: '.(Producto::find($f['producto_id'])?->nombre ?? $f['producto_id']);
+        }
+        if ($f['desde']) {
+            $partes[] = 'Activas desde: '.$f['desde'];
+        }
+        if ($f['hasta']) {
+            $partes[] = 'Activas hasta: '.$f['hasta'];
+        }
+        $txt = $partes ? implode(' · ', $partes) : 'Todas las promociones activas';
+
+        return $txt.' — Generado: '.now()->format('d/m/Y H:i');
     }
 
     public function create(): Response

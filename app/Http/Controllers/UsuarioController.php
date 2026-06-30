@@ -8,6 +8,7 @@ use App\Models\Bitacora;
 use App\Models\Rol;
 use App\Models\User;
 use App\Support\Reporte;
+use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -32,22 +33,22 @@ class UsuarioController extends Controller
      */
     private const ROL_PROPIETARIO = 'Propietario';
 
-    /** Listado de usuarios con su(s) rol(es) vigente(s). */
+    /** Listado de usuarios con su(s) rol(es) vigente(s), filtrable por rol y búsqueda (sin fechas). */
     public function index(Request $request): Response
     {
-        $usuarios = User::query()
-            ->with(['roles' => fn ($q) => $q->wherePivot('activo', true)])
-            ->orderBy('name')
-            ->get()
-            ->map(fn (User $u) => [
-                'id' => $u->id,
-                'name' => $u->name,
-                'email' => $u->email,
-                'roles' => $u->roles->pluck('nombre')->values(),
-            ]);
+        [$filtros, $query] = $this->consultaFiltrada($request);
+
+        $usuarios = $query->get()->map(fn (User $u) => [
+            'id' => $u->id,
+            'name' => $u->name,
+            'email' => $u->email,
+            'roles' => $u->roles->pluck('nombre')->values(),
+        ]);
 
         return Inertia::render('usuarios/Index', [
             'usuarios' => $usuarios,
+            'filtros' => $filtros,
+            'roles' => Rol::where('activo', true)->orderBy('nombre')->get(['id', 'nombre']),
             // Permisos del usuario actual: el front muestra/oculta botones segun esto
             // (el guardia del servidor es la barrera real; esto es solo UX).
             'puedeCrear' => $request->user()->tienePermiso('usuarios', 'registrar'),
@@ -58,13 +59,11 @@ class UsuarioController extends Controller
         ]);
     }
 
-    /** Reporte (PDF/Excel/CSV) de los usuarios con su(s) rol(es) vigente(s). permiso:usuarios,listar. */
+    /** Reporte (PDF/Excel/CSV) de los usuarios (respeta los filtros). permiso:usuarios,listar. */
     public function reporte(Request $request): mixed
     {
-        $usuarios = User::query()
-            ->with(['roles' => fn ($q) => $q->wherePivot('activo', true)])
-            ->orderBy('name')
-            ->get();
+        [$filtros, $query] = $this->consultaFiltrada($request);
+        $usuarios = $query->get();
 
         $columnas = ['Nombre', 'Correo electrónico', 'Rol(es)'];
         $filas = $usuarios->map(fn (User $u) => [
@@ -75,11 +74,53 @@ class UsuarioController extends Controller
 
         return Reporte::generar($request->string('formato')->toString(), [
             'titulo' => 'Reporte de Usuarios',
-            'subtitulo' => 'Usuarios del sistema — Generado: '.now()->format('d/m/Y H:i'),
+            'subtitulo' => $this->descripcionFiltros($filtros),
             'columnas' => $columnas,
             'filas' => $filas,
             'filaTotal' => ['Total: '.$usuarios->count().' usuarios', '', ''],
         ], 'usuarios');
+    }
+
+    /**
+     * Consulta de usuarios aplicando filtros (rol + búsqueda por nombre/correo; sin fechas).
+     * Compartida por index y reporte.
+     *
+     * @return array{0: array<string, mixed>, 1: Builder}
+     */
+    private function consultaFiltrada(Request $request): array
+    {
+        $filtros = [
+            'rol_id' => $request->integer('rol_id') ?: null,
+            'q' => $request->string('q')->toString() ?: null,
+        ];
+
+        $query = User::query()
+            ->with(['roles' => fn ($q) => $q->wherePivot('activo', true)])
+            ->when($filtros['rol_id'], fn ($q, $id) => $q->whereHas(
+                'roles',
+                fn ($r) => $r->where('rol.id', $id)->where('usuario_rol.activo', true),
+            ))
+            ->when($filtros['q'], fn ($q, $t) => $q->where(
+                fn ($w) => $w->where('name', 'like', "%{$t}%")->orWhere('email', 'like', "%{$t}%"),
+            ))
+            ->orderBy('name');
+
+        return [$filtros, $query];
+    }
+
+    /** Texto legible de los filtros aplicados (para el subtitulo del reporte). */
+    private function descripcionFiltros(array $f): string
+    {
+        $partes = [];
+        if ($f['rol_id']) {
+            $partes[] = 'Rol: '.(Rol::find($f['rol_id'])?->nombre ?? $f['rol_id']);
+        }
+        if ($f['q']) {
+            $partes[] = 'Búsqueda: "'.$f['q'].'"';
+        }
+        $txt = $partes ? implode(' · ', $partes) : 'Todos los usuarios';
+
+        return $txt.' — Generado: '.now()->format('d/m/Y H:i');
     }
 
     /** Formulario de alta. */

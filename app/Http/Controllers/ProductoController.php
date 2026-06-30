@@ -6,6 +6,7 @@ use App\Models\Bitacora;
 use App\Models\Categoria;
 use App\Models\Producto;
 use App\Support\Reporte;
+use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -24,33 +25,33 @@ class ProductoController extends Controller
 {
     public function index(Request $request): Response
     {
-        $productos = Producto::where('activo', true)
-            ->orderBy('nombre')
-            ->get()
-            ->map(fn (Producto $p) => [
-                'id' => $p->id,
-                'nombre' => $p->nombre,
-                'descripcion' => $p->descripcion,
-                'precio' => $p->precio,
-                'stock' => $p->stock,
-                'foto_url' => $this->fotoUrl($p),
-            ]);
+        [$filtros, $query] = $this->consultaFiltrada($request);
+
+        $productos = $query->get()->map(fn (Producto $p) => [
+            'id' => $p->id,
+            'nombre' => $p->nombre,
+            'descripcion' => $p->descripcion,
+            'categoria' => $p->categoria?->nombre,
+            'precio' => $p->precio,
+            'stock' => $p->stock,
+            'foto_url' => $this->fotoUrl($p),
+        ]);
 
         return Inertia::render('productos/Index', [
             'productos' => $productos,
+            'filtros' => $filtros,
+            'categorias' => $this->categoriasParaFormulario(),
             'puedeCrear' => $request->user()->tienePermiso('productos', 'registrar'),
             'puedeEditar' => $request->user()->tienePermiso('productos', 'modificar'),
             'puedeEliminar' => $request->user()->tienePermiso('productos', 'eliminar'),
         ]);
     }
 
-    /** Reporte (PDF/Excel/CSV) del catálogo de productos activos. Ruta con permiso:productos,listar. */
+    /** Reporte (PDF/Excel/CSV) del catálogo de productos activos, respetando los filtros. */
     public function reporte(Request $request): mixed
     {
-        $productos = Producto::where('activo', true)
-            ->with('categoria:id,nombre')
-            ->orderBy('nombre')
-            ->get();
+        [$filtros, $query] = $this->consultaFiltrada($request);
+        $productos = $query->get();
 
         $columnas = ['Nombre', 'Categoría', 'Precio (Bs)', 'Stock'];
         $filas = $productos->map(fn (Producto $p) => [
@@ -62,11 +63,48 @@ class ProductoController extends Controller
 
         return Reporte::generar($request->string('formato')->toString(), [
             'titulo' => 'Reporte de Productos',
-            'subtitulo' => 'Catálogo activo — Generado: '.now()->format('d/m/Y H:i'),
+            'subtitulo' => $this->descripcionFiltros($filtros),
             'columnas' => $columnas,
             'filas' => $filas,
             'filaTotal' => ['Total: '.$productos->count().' productos', '', '', $productos->sum('stock')],
         ], 'productos');
+    }
+
+    /**
+     * Consulta del catálogo activo aplicando filtros (categoría + búsqueda por nombre; sin fechas).
+     * Compartida por index y reporte.
+     *
+     * @return array{0: array<string, mixed>, 1: Builder}
+     */
+    private function consultaFiltrada(Request $request): array
+    {
+        $filtros = [
+            'categoria_id' => $request->integer('categoria_id') ?: null,
+            'q' => $request->string('q')->toString() ?: null,
+        ];
+
+        $query = Producto::where('activo', true)
+            ->with('categoria:id,nombre')
+            ->when($filtros['categoria_id'], fn ($q, $id) => $q->where('categoria_id', $id))
+            ->when($filtros['q'], fn ($q, $t) => $q->where('nombre', 'like', "%{$t}%"))
+            ->orderBy('nombre');
+
+        return [$filtros, $query];
+    }
+
+    /** Texto legible de los filtros aplicados (para el subtitulo del reporte). */
+    private function descripcionFiltros(array $f): string
+    {
+        $partes = [];
+        if ($f['categoria_id']) {
+            $partes[] = 'Categoría: '.(Categoria::find($f['categoria_id'])?->nombre ?? $f['categoria_id']);
+        }
+        if ($f['q']) {
+            $partes[] = 'Búsqueda: "'.$f['q'].'"';
+        }
+        $txt = $partes ? implode(' · ', $partes) : 'Catálogo activo completo';
+
+        return $txt.' — Generado: '.now()->format('d/m/Y H:i');
     }
 
     public function create(): Response
