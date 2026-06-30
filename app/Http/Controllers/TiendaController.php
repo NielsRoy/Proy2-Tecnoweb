@@ -33,6 +33,8 @@ class TiendaController extends Controller
                     'precio' => (float) $p->precio,
                     'precio_final' => $promo ? $promo->precioConDescuento((float) $p->precio) : (float) $p->precio,
                     'promocion_nombre' => $promo?->nombre,
+                    'promocion_tipo' => $promo?->tipo_descuento,
+                    'promocion_valor' => $promo ? (float) $promo->valor : null,
                     'stock' => $p->stock,
                 ];
             });

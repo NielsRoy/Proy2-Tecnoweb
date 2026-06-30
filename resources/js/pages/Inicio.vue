@@ -14,6 +14,8 @@ type ProductoTienda = {
     precio: number;
     precio_final: number;
     promocion_nombre: string | null;
+    promocion_tipo: 'porcentaje' | 'monto' | null;
+    promocion_valor: number | null;
     stock: number;
 };
 
@@ -34,6 +36,16 @@ function agregarAlCarrito(p: ProductoTienda): void {
         { producto_id: p.id, cantidad: 1 },
         { preserveScroll: true },
     );
+}
+
+// Etiqueta del descuento de la promo vigente: "-N %" o "-N Bs".
+function descuentoLabel(p: ProductoTienda): string | null {
+    if (!p.promocion_nombre || p.promocion_valor == null) {
+        return null;
+    }
+    const v = p.promocion_valor;
+    const num = Number.isInteger(v) ? String(v) : v.toFixed(2);
+    return p.promocion_tipo === 'porcentaje' ? `-${num} %` : `-${num} Bs`;
 }
 </script>
 
@@ -73,7 +85,7 @@ function agregarAlCarrito(p: ProductoTienda): void {
                 class="flex flex-col overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border"
             >
                 <div
-                    class="flex aspect-square items-center justify-center bg-muted"
+                    class="relative flex aspect-square items-center justify-center bg-muted"
                 >
                     <img
                         v-if="p.foto_url"
@@ -82,6 +94,12 @@ function agregarAlCarrito(p: ProductoTienda): void {
                         class="h-full w-full object-cover"
                     />
                     <ImageOff v-else class="h-10 w-10 text-muted-foreground" />
+                    <span
+                        v-if="descuentoLabel(p)"
+                        class="absolute top-2 left-2 rounded-md bg-emerald-600 px-2 py-0.5 text-xs font-semibold text-white shadow-sm"
+                    >
+                        {{ descuentoLabel(p) }}
+                    </span>
                 </div>
 
                 <div class="flex flex-1 flex-col gap-2 p-3">

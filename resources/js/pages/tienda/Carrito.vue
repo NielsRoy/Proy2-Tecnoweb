@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import { ImageOff, Trash2 } from '@lucide/vue';
+import { ArrowLeft, ImageOff, Minus, Plus, Trash2 } from '@lucide/vue';
 import { computed } from 'vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
@@ -40,11 +40,16 @@ defineOptions({
 });
 
 // --- Operaciones del carrito ---
-function cambiarCantidad(linea: LineaCarrito, e: Event): void {
-    const valor = Number((e.target as HTMLInputElement).value) || 1;
+// La cantidad se ajusta solo con los botones +/- (no es un campo editable por teclado), acotada
+// entre 1 y el stock disponible. Si no cambia nada no se envia nada al server.
+function setCantidad(linea: LineaCarrito, valor: number): void {
+    const cantidad = Math.min(Math.max(valor, 1), linea.stock);
+    if (cantidad === linea.cantidad) {
+        return;
+    }
     router.put(
         actualizar(linea.producto_id).url,
-        { cantidad: valor },
+        { cantidad },
         { preserveScroll: true },
     );
 }
@@ -124,11 +129,19 @@ const selectClass =
     <Head title="Carrito" />
 
     <div class="flex h-full flex-1 flex-col gap-4 p-4">
-        <header class="space-y-1">
-            <h1 class="text-xl font-semibold">Tu carrito</h1>
-            <p class="text-sm text-muted-foreground">
-                Revisa los productos, ajusta cantidades y finaliza tu compra.
-            </p>
+        <header class="flex items-start justify-between gap-4">
+            <div class="space-y-1">
+                <h1 class="text-xl font-semibold">Tu carrito</h1>
+                <p class="text-sm text-muted-foreground">
+                    Revisa los productos, ajusta cantidades y finaliza tu compra.
+                </p>
+            </div>
+            <Button variant="outline" as-child>
+                <Link :href="inicio()">
+                    <ArrowLeft class="h-4 w-4" />
+                    Seguir comprando
+                </Link>
+            </Button>
         </header>
 
         <!-- Carrito vacío -->
@@ -182,14 +195,37 @@ const selectClass =
                     </div>
 
                     <div class="flex flex-col items-end gap-2">
-                        <Input
-                            type="number"
-                            min="1"
-                            :max="linea.stock"
-                            :value="linea.cantidad"
-                            class="w-20"
-                            @change="cambiarCantidad(linea, $event)"
-                        />
+                        <div
+                            class="flex items-center gap-1 rounded-md border border-input p-0.5"
+                        >
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                class="h-7 w-7"
+                                :disabled="linea.cantidad <= 1"
+                                aria-label="Quitar una unidad"
+                                @click="setCantidad(linea, linea.cantidad - 1)"
+                            >
+                                <Minus class="h-4 w-4" />
+                            </Button>
+                            <span
+                                class="min-w-8 text-center text-sm font-medium tabular-nums"
+                            >
+                                {{ linea.cantidad }}
+                            </span>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                class="h-7 w-7"
+                                :disabled="linea.cantidad >= linea.stock"
+                                aria-label="Agregar una unidad"
+                                @click="setCantidad(linea, linea.cantidad + 1)"
+                            >
+                                <Plus class="h-4 w-4" />
+                            </Button>
+                        </div>
                         <div class="text-sm font-medium whitespace-nowrap">
                             Bs {{ linea.subtotal.toFixed(2) }}
                         </div>
