@@ -17,6 +17,18 @@ return new class extends Migration
 {
     public function up(): void
     {
+        // Categoria de productos. `foto` sirve de banner en la tienda; `orden` controla la secuencia
+        // de aparicion en la tienda (no hay subcategorias). `est=false` = baja logica.
+        Schema::create('categoria', function (Blueprint $table) {
+            $table->id();
+            $table->string('nombre');
+            $table->text('descripcion')->nullable();
+            $table->string('foto')->nullable();        // banner de la tienda (ruta en storage)
+            $table->integer('orden')->default(0);      // orden de aparicion en la tienda
+            $table->boolean('est')->default(true);     // activo / soft-delete
+            $table->timestamps();
+        });
+
         // Catalogo de productos. `stock` es denormalizado (lo mueven compra/venta/inventario,
         // con `inventario` como libro mayor). `est=false` = baja logica (lo referencian ventas).
         Schema::create('producto', function (Blueprint $table) {
@@ -26,6 +38,7 @@ return new class extends Migration
             $table->decimal('precio', 10, 2);
             $table->integer('stock')->default(0);
             $table->string('foto')->nullable();        // ruta del archivo en storage (subida futura)
+            $table->foreignId('categoria_id')->nullable()->constrained('categoria')->nullOnDelete();
             $table->boolean('est')->default(true);     // activo en catalogo / soft-delete
             $table->timestamps();
         });
@@ -147,5 +160,6 @@ return new class extends Migration
         Schema::dropIfExists('compra');
         Schema::dropIfExists('promocion');
         Schema::dropIfExists('producto');
+        Schema::dropIfExists('categoria');
     }
 };

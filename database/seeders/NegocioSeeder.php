@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Categoria;
 use App\Models\Compra;
 use App\Models\DetalleCompra;
 use App\Models\DetalleVenta;
@@ -24,23 +25,39 @@ class NegocioSeeder extends Seeder
 {
     public function run(): void
     {
+        // Categorias (foto NULL por ahora; la subida del banner se hace desde el CRUD de Categorias).
+        $categorias = [
+            ['Abarrotes', 'Productos basicos de despensa', 1],
+            ['Bebidas', 'Gaseosas, cafe e infusiones', 2],
+            ['Limpieza', 'Articulos de limpieza y aseo', 3],
+            ['Snacks', 'Galletas y picoteos', 4],
+        ];
+        foreach ($categorias as [$nombre, $descripcion, $orden]) {
+            Categoria::firstOrCreate(
+                ['nombre' => $nombre],
+                ['descripcion' => $descripcion, 'orden' => $orden, 'est' => true],
+            );
+        }
+        $catId = fn (string $nombre) => Categoria::where('nombre', $nombre)->value('id');
+
         // Catalogo (foto NULL por ahora; la subida de imagenes se hara en el CU de Productos).
         $productos = [
-            ['Aceite de Girasol 5L', 'Aceite comestible de girasol, botella de 5 litros', 49.99],
-            ['Detergente en Polvo 3kg', 'Detergente para ropa, bolsa de 3 kg', 39.99],
-            ['Arroz Grano de Oro 5kg', 'Arroz blanco de grano largo, bolsa de 5 kg', 29.99],
-            ['Azucar Refinada 2kg', 'Azucar blanca refinada, bolsa de 2 kg', 15.99],
-            ['Cafe Instantaneo 170g', 'Cafe instantaneo en frasco de 170 g', 24.99],
-            ['Pack Gaseosa 2L x6', 'Pack de 6 gaseosas de 2 litros', 59.99],
-            ['Fideo Spaghetti 1kg', 'Pack de fideos spaghetti, 1 kg', 12.99],
-            ['Atun en Lata Pack x3', 'Atun en aceite, pack de 3 latas', 19.99],
-            ['Papel Higienico x12', 'Papel higienico doble hoja, paquete de 12 rollos', 45.99],
-            ['Galletas Surtidas', 'Paquete de galletas dulces surtidas', 9.99],
+            ['Aceite de Girasol 5L', 'Aceite comestible de girasol, botella de 5 litros', 49.99, 'Abarrotes'],
+            ['Detergente en Polvo 3kg', 'Detergente para ropa, bolsa de 3 kg', 39.99, 'Limpieza'],
+            ['Arroz Grano de Oro 5kg', 'Arroz blanco de grano largo, bolsa de 5 kg', 29.99, 'Abarrotes'],
+            ['Azucar Refinada 2kg', 'Azucar blanca refinada, bolsa de 2 kg', 15.99, 'Abarrotes'],
+            ['Cafe Instantaneo 170g', 'Cafe instantaneo en frasco de 170 g', 24.99, 'Bebidas'],
+            ['Pack Gaseosa 2L x6', 'Pack de 6 gaseosas de 2 litros', 59.99, 'Bebidas'],
+            ['Fideo Spaghetti 1kg', 'Pack de fideos spaghetti, 1 kg', 12.99, 'Abarrotes'],
+            ['Atun en Lata Pack x3', 'Atun en aceite, pack de 3 latas', 19.99, 'Abarrotes'],
+            ['Papel Higienico x12', 'Papel higienico doble hoja, paquete de 12 rollos', 45.99, 'Limpieza'],
+            ['Galletas Surtidas', 'Paquete de galletas dulces surtidas', 9.99, 'Snacks'],
         ];
-        foreach ($productos as [$nombre, $descripcion, $precio]) {
+        foreach ($productos as [$nombre, $descripcion, $precio, $categoria]) {
             Producto::firstOrCreate(
                 ['nombre' => $nombre],
-                ['descripcion' => $descripcion, 'precio' => $precio, 'stock' => 0, 'est' => true],
+                ['descripcion' => $descripcion, 'precio' => $precio, 'stock' => 0,
+                    'categoria_id' => $catId($categoria), 'est' => true],
             );
         }
 

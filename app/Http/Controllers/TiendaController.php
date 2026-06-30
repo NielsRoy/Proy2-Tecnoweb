@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Carrito;
+use App\Models\Categoria;
 use App\Models\Producto;
 use App\Models\Promocion;
 use Illuminate\Http\Request;
@@ -19,9 +20,29 @@ class TiendaController extends Controller
 {
     public function index(Request $request): Response
     {
+        // Filtro por categoria via query param (?categoria=ID) -> NO crea URLs nuevas (sigue siendo /inicio).
+        $categoriaId = $request->integer('categoria') ?: null;
+
+        // Categorias activas con productos visibles (para los botones de filtro y el banner activo).
+        $categorias = Categoria::where('est', true)
+            ->orderBy('orden')
+            ->orderBy('nombre')
+            ->get()
+            ->map(fn (Categoria $c) => [
+                'id' => $c->id,
+                'nombre' => $c->nombre,
+                'descripcion' => $c->descripcion,
+                'foto_url' => $c->foto ? Storage::disk('public')->url($c->foto) : null,
+            ]);
+
+        // Solo dejamos activa una categoria que exista (evita estado raro si el id no es valido).
+        $categoriaActiva = $categorias->firstWhere('id', $categoriaId) ? $categoriaId : null;
+
         $promosVigentes = Promocion::vigente()->get()->keyBy('producto_id');
 
-        $productos = Producto::where('est', true)->orderBy('nombre')->get()
+        $productos = Producto::where('est', true)
+            ->when($categoriaActiva, fn ($q, $id) => $q->where('categoria_id', $id))
+            ->orderBy('nombre')->get()
             ->map(function (Producto $p) use ($promosVigentes) {
                 $promo = $promosVigentes->get($p->id);
 
@@ -45,6 +66,8 @@ class TiendaController extends Controller
         return Inertia::render('Inicio', [
             'productos' => $productos,
             'carritoCount' => $carritoCount,
+            'categorias' => $categorias,
+            'categoriaActiva' => $categoriaActiva,
         ]);
     }
 }

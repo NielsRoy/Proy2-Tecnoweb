@@ -28,14 +28,15 @@ class ModuloSeeder extends Seeder
             ['clave' => 'dashboard', 'nombre' => 'Dashboard', 'icono' => 'LayoutGrid', 'ruta' => 'dashboard', 'orden' => 1, 'acciones' => ['ver' => 'Ver']],
             ['clave' => 'usuarios', 'nombre' => 'Usuarios', 'icono' => 'Users', 'ruta' => 'usuarios.index', 'orden' => 2, 'acciones' => $crud],
             ['clave' => 'productos', 'nombre' => 'Productos', 'icono' => 'Package', 'ruta' => 'productos.index', 'orden' => 3, 'acciones' => $crud],
-            ['clave' => 'compras', 'nombre' => 'Compras', 'icono' => 'ShoppingCart', 'ruta' => 'compras.index', 'orden' => 4, 'acciones' => ['listar' => 'Listar', 'registrar' => 'Registrar', 'eliminar' => 'Anular']],
-            ['clave' => 'ventas', 'nombre' => 'Ventas', 'icono' => 'Receipt', 'ruta' => 'ventas.index', 'orden' => 5, 'acciones' => ['listar' => 'Listar', 'registrar' => 'Registrar', 'eliminar' => 'Anular']],
-            ['clave' => 'inventarios', 'nombre' => 'Inventarios', 'icono' => 'Boxes', 'ruta' => 'inventarios.index', 'orden' => 6, 'acciones' => ['listar' => 'Listar', 'registrar' => 'Registrar']],
-            ['clave' => 'promociones', 'nombre' => 'Promociones', 'icono' => 'BadgePercent', 'ruta' => 'promociones.index', 'orden' => 7, 'acciones' => $crud],
-            ['clave' => 'pagos', 'nombre' => 'Pagos', 'icono' => 'CreditCard', 'ruta' => 'pagos.index', 'orden' => 8, 'acciones' => ['listar' => 'Listar', 'registrar' => 'Registrar']],
-            ['clave' => 'reportes', 'nombre' => 'Reportes', 'icono' => 'ChartColumn', 'ruta' => 'reportes.index', 'orden' => 9, 'acciones' => ['listar' => 'Ver reportes']],
-            ['clave' => 'bitacora', 'nombre' => 'Bitácora', 'icono' => 'ScrollText', 'ruta' => 'bitacora.index', 'orden' => 10, 'acciones' => ['listar' => 'Ver bitácora']],
-            ['clave' => 'acceso', 'nombre' => 'Control de Acceso', 'icono' => 'ShieldCheck', 'ruta' => 'acceso.matriz', 'orden' => 11, 'acciones' => ['listar' => 'Ver matriz', 'modificar' => 'Editar matriz']],
+            ['clave' => 'categorias', 'nombre' => 'Categorías', 'icono' => 'Tags', 'ruta' => 'categorias.index', 'orden' => 4, 'acciones' => $crud],
+            ['clave' => 'compras', 'nombre' => 'Compras', 'icono' => 'ShoppingCart', 'ruta' => 'compras.index', 'orden' => 5, 'acciones' => ['listar' => 'Listar', 'registrar' => 'Registrar', 'eliminar' => 'Anular']],
+            ['clave' => 'ventas', 'nombre' => 'Ventas', 'icono' => 'Receipt', 'ruta' => 'ventas.index', 'orden' => 6, 'acciones' => ['listar' => 'Listar', 'registrar' => 'Registrar', 'eliminar' => 'Anular']],
+            ['clave' => 'inventarios', 'nombre' => 'Inventarios', 'icono' => 'Boxes', 'ruta' => 'inventarios.index', 'orden' => 7, 'acciones' => ['listar' => 'Listar', 'registrar' => 'Registrar']],
+            ['clave' => 'promociones', 'nombre' => 'Promociones', 'icono' => 'BadgePercent', 'ruta' => 'promociones.index', 'orden' => 8, 'acciones' => $crud],
+            ['clave' => 'pagos', 'nombre' => 'Pagos', 'icono' => 'CreditCard', 'ruta' => 'pagos.index', 'orden' => 9, 'acciones' => ['listar' => 'Listar', 'registrar' => 'Registrar']],
+            ['clave' => 'reportes', 'nombre' => 'Reportes', 'icono' => 'ChartColumn', 'ruta' => 'reportes.index', 'orden' => 10, 'acciones' => ['listar' => 'Ver reportes']],
+            ['clave' => 'bitacora', 'nombre' => 'Bitácora', 'icono' => 'ScrollText', 'ruta' => 'bitacora.index', 'orden' => 11, 'acciones' => ['listar' => 'Ver bitácora']],
+            ['clave' => 'acceso', 'nombre' => 'Control de Acceso', 'icono' => 'ShieldCheck', 'ruta' => 'acceso.matriz', 'orden' => 12, 'acciones' => ['listar' => 'Ver matriz', 'modificar' => 'Editar matriz']],
         ];
 
         foreach ($modulos as $m) {

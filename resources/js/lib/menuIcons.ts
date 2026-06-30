@@ -10,6 +10,7 @@ import {
     ScrollText,
     ShieldCheck,
     ShoppingCart,
+    Tags,
     Users,
 } from '@lucide/vue';
 
@@ -19,6 +20,7 @@ const iconos: Record<string, LucideIcon> = {
     LayoutGrid,
     Users,
     Package,
+    Tags,
     ShoppingCart,
     Receipt,
     Boxes,

@@ -3,6 +3,7 @@
 use App\Http\Controllers\AccesoController;
 use App\Http\Controllers\BitacoraController;
 use App\Http\Controllers\CarritoController;
+use App\Http\Controllers\CategoriaController;
 use App\Http\Controllers\CompraController;
 use App\Http\Controllers\InventarioController;
 use App\Http\Controllers\PagoController;
@@ -63,6 +64,22 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->middleware('permiso:productos,modificar')->name('update');
         Route::delete('{producto}', [ProductoController::class, 'destroy'])
             ->middleware('permiso:productos,eliminar')->name('destroy');
+    });
+
+    // CRUD de Categorias (modulo "categorias"). Agrupan productos y dan banner a la tienda.
+    Route::prefix('categorias')->name('categorias.')->group(function () {
+        Route::get('/', [CategoriaController::class, 'index'])
+            ->middleware('permiso:categorias,listar')->name('index');
+        Route::get('crear', [CategoriaController::class, 'create'])
+            ->middleware('permiso:categorias,registrar')->name('create');
+        Route::post('/', [CategoriaController::class, 'store'])
+            ->middleware('permiso:categorias,registrar')->name('store');
+        Route::get('{categoria}/editar', [CategoriaController::class, 'edit'])
+            ->middleware('permiso:categorias,modificar')->name('edit');
+        Route::put('{categoria}', [CategoriaController::class, 'update'])
+            ->middleware('permiso:categorias,modificar')->name('update');
+        Route::delete('{categoria}', [CategoriaController::class, 'destroy'])
+            ->middleware('permiso:categorias,eliminar')->name('destroy');
     });
 
     // CU3 Compras (modulo "compras"): compra multi-producto. Sin edit/update (anular y re-registrar).

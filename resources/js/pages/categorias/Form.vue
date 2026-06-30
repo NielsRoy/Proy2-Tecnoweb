@@ -5,51 +5,44 @@ import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { index, store, update } from '@/routes/productos';
+import { index, store, update } from '@/routes/categorias';
 
-type ProductoEdit = {
+type CategoriaEdit = {
     id: number;
     nombre: string;
     descripcion: string | null;
-    precio: string;
-    categoria_id: number | null;
+    orden: number;
     foto_url: string | null;
 };
 
 const props = defineProps<{
-    producto: ProductoEdit | null;
-    categorias: { id: number; nombre: string }[];
+    categoria: CategoriaEdit | null;
 }>();
 
-const esEdicion = computed(() => props.producto !== null);
+const esEdicion = computed(() => props.categoria !== null);
 
 defineOptions({
     layout: {
-        breadcrumbs: [{ title: 'Productos', href: index() }],
+        breadcrumbs: [{ title: 'Categorías', href: index() }],
     },
 });
 
 const form = useForm<{
     nombre: string;
     descripcion: string;
-    precio: string;
-    categoria_id: string;
+    orden: string;
     foto: File | null;
 }>({
-    nombre: props.producto?.nombre ?? '',
-    descripcion: props.producto?.descripcion ?? '',
-    precio: props.producto?.precio ?? '',
-    categoria_id:
-        props.producto?.categoria_id != null
-            ? String(props.producto.categoria_id)
-            : '',
+    nombre: props.categoria?.nombre ?? '',
+    descripcion: props.categoria?.descripcion ?? '',
+    orden: props.categoria?.orden != null ? String(props.categoria.orden) : '0',
     foto: null,
 });
 
-// Vista previa: la foto recién elegida, o la actual del producto al editar.
+// Vista previa: la foto recién elegida, o la actual de la categoría al editar.
 const previewNueva = ref<string | null>(null);
 const preview = computed(
-    () => previewNueva.value ?? props.producto?.foto_url ?? null,
+    () => previewNueva.value ?? props.categoria?.foto_url ?? null,
 );
 
 function onFoto(e: Event): void {
@@ -59,44 +52,30 @@ function onFoto(e: Event): void {
 }
 
 function enviar(): void {
-    // categoria_id vacio = "Sin categoría" -> null (la validacion del server espera integer o null).
-    if (props.producto) {
+    if (props.categoria) {
         // PUT con archivo: se postea con _method=put (PHP no parsea multipart en PUT).
         form
-            .transform((data) => ({
-                ...data,
-                categoria_id: data.categoria_id || null,
-                _method: 'put',
-            }))
-            .post(update(props.producto.id).url, {
+            .transform((data) => ({ ...data, _method: 'put' }))
+            .post(update(props.categoria.id).url, {
                 preserveScroll: true,
                 forceFormData: true,
             });
     } else {
-        form
-            .transform((data) => ({
-                ...data,
-                categoria_id: data.categoria_id || null,
-            }))
-            .post(store().url, { preserveScroll: true });
+        form.post(store().url, { preserveScroll: true });
     }
 }
 </script>
 
 <template>
-    <Head :title="esEdicion ? 'Editar producto' : 'Nuevo producto'" />
+    <Head :title="esEdicion ? 'Editar categoría' : 'Nueva categoría'" />
 
     <div class="flex h-full flex-1 flex-col gap-4 p-4">
         <header class="space-y-1">
             <h1 class="text-xl font-semibold">
-                {{ esEdicion ? 'Editar producto' : 'Nuevo producto' }}
+                {{ esEdicion ? 'Editar categoría' : 'Nueva categoría' }}
             </h1>
             <p class="text-sm text-muted-foreground">
-                {{
-                    esEdicion
-                        ? 'Modifica los datos del producto. El stock no se edita aquí.'
-                        : 'Registra un producto del catálogo. Nace con stock 0.'
-                }}
+                Registra una categoría. La foto sirve de banner en la tienda.
             </p>
         </header>
 
@@ -107,7 +86,7 @@ function enviar(): void {
                     id="nombre"
                     v-model="form.nombre"
                     required
-                    placeholder="Ej. Aceite de Girasol 5L"
+                    placeholder="Ej. Bebidas"
                 />
                 <InputError :message="form.errors.nombre" />
             </div>
@@ -118,48 +97,31 @@ function enviar(): void {
                     id="descripcion"
                     v-model="form.descripcion"
                     rows="3"
-                    placeholder="Descripción del producto (opcional)"
+                    placeholder="Descripción de la categoría (opcional). Se muestra en el banner."
                     class="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-base shadow-xs transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm dark:bg-input/30"
                 ></textarea>
                 <InputError :message="form.errors.descripcion" />
             </div>
 
             <div class="grid gap-2">
-                <Label for="precio">Precio (Bs)</Label>
+                <Label for="orden">Orden</Label>
                 <Input
-                    id="precio"
+                    id="orden"
                     type="number"
-                    step="0.01"
                     min="0"
-                    v-model="form.precio"
-                    required
-                    placeholder="0.00"
+                    step="1"
+                    v-model="form.orden"
+                    placeholder="0"
                 />
-                <InputError :message="form.errors.precio" />
-            </div>
-
-            <div class="grid gap-2">
-                <Label for="categoria_id">Categoría</Label>
-                <select
-                    id="categoria_id"
-                    v-model="form.categoria_id"
-                    class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm dark:bg-input/30"
-                >
-                    <option value="">Sin categoría</option>
-                    <option
-                        v-for="c in categorias"
-                        :key="c.id"
-                        :value="String(c.id)"
-                    >
-                        {{ c.nombre }}
-                    </option>
-                </select>
-                <InputError :message="form.errors.categoria_id" />
+                <p class="text-xs text-muted-foreground">
+                    Define en qué secuencia aparece en la tienda (menor primero).
+                </p>
+                <InputError :message="form.errors.orden" />
             </div>
 
             <div class="grid gap-2">
                 <Label for="foto">
-                    Foto
+                    Foto (banner)
                     <span
                         v-if="esEdicion"
                         class="font-normal text-muted-foreground"
@@ -172,7 +134,7 @@ function enviar(): void {
                         v-if="preview"
                         :src="preview"
                         alt="Vista previa"
-                        class="h-20 w-20 rounded-md border border-sidebar-border/70 object-cover dark:border-sidebar-border"
+                        class="h-20 w-32 rounded-md border border-sidebar-border/70 object-cover dark:border-sidebar-border"
                     />
                     <input
                         id="foto"
@@ -190,7 +152,7 @@ function enviar(): void {
 
             <div class="flex items-center gap-3">
                 <Button type="submit" :disabled="form.processing">
-                    {{ esEdicion ? 'Guardar cambios' : 'Crear producto' }}
+                    {{ esEdicion ? 'Guardar cambios' : 'Crear categoría' }}
                 </Button>
                 <Button variant="outline" as-child>
                     <Link :href="index()">Cancelar</Link>

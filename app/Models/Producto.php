@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
@@ -15,9 +16,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $precio
  * @property int $stock
  * @property string|null $foto
+ * @property int|null $categoria_id
  * @property bool $est
  */
-#[Fillable(['nombre', 'descripcion', 'precio', 'stock', 'foto', 'est'])]
+#[Fillable(['nombre', 'descripcion', 'precio', 'stock', 'foto', 'categoria_id', 'est'])]
 class Producto extends Model
 {
     protected $table = 'producto';
@@ -29,6 +31,11 @@ class Producto extends Model
             'stock' => 'integer',
             'est' => 'boolean',
         ];
+    }
+
+    public function categoria(): BelongsTo
+    {
+        return $this->belongsTo(Categoria::class, 'categoria_id');
     }
 
     public function promociones(): HasMany

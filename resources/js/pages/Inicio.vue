@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
 import { ImageOff, ShoppingCart } from '@lucide/vue';
+import { computed } from 'vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { inicio } from '@/routes';
@@ -19,10 +20,33 @@ type ProductoTienda = {
     stock: number;
 };
 
-defineProps<{
+type CategoriaTienda = {
+    id: number;
+    nombre: string;
+    descripcion: string | null;
+    foto_url: string | null;
+};
+
+const props = defineProps<{
     productos: ProductoTienda[];
     carritoCount: number;
+    categorias: CategoriaTienda[];
+    categoriaActiva: number | null;
 }>();
+
+// Categoria activa (objeto) para mostrar su banner; null = "Todas".
+const bannerCategoria = computed<CategoriaTienda | null>(
+    () => props.categorias.find((c) => c.id === props.categoriaActiva) ?? null,
+);
+
+// Filtra por categoria sin crear URLs nuevas: solo cambia el query param de /inicio.
+function filtrarPorCategoria(id: number | null): void {
+    router.get(
+        inicio().url,
+        id ? { categoria: id } : {},
+        { preserveScroll: true, preserveState: true, replace: true },
+    );
+}
 
 defineOptions({
     layout: {
@@ -76,6 +100,54 @@ function descuentoLabel(p: ProductoTienda): string | null {
             </Button>
         </header>
 
+        <!-- Filtro por categoría (no crea URLs nuevas: solo /inicio?categoria=ID). -->
+        <div v-if="categorias.length > 0" class="flex flex-wrap gap-2">
+            <Button
+                size="sm"
+                :variant="categoriaActiva === null ? 'default' : 'outline'"
+                @click="filtrarPorCategoria(null)"
+            >
+                Todas
+            </Button>
+            <Button
+                v-for="c in categorias"
+                :key="c.id"
+                size="sm"
+                :variant="categoriaActiva === c.id ? 'default' : 'outline'"
+                @click="filtrarPorCategoria(c.id)"
+            >
+                {{ c.nombre }}
+            </Button>
+        </div>
+
+        <!-- Banner de la categoría activa (foto + nombre + descripción). -->
+        <div
+            v-if="bannerCategoria"
+            class="relative overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border"
+        >
+            <img
+                v-if="bannerCategoria.foto_url"
+                :src="bannerCategoria.foto_url"
+                :alt="bannerCategoria.nombre"
+                class="h-40 w-full object-cover"
+            />
+            <div
+                v-else
+                class="h-40 w-full bg-gradient-to-r from-emerald-600 to-emerald-400"
+            />
+            <div
+                class="absolute inset-0 flex flex-col justify-end gap-1 bg-black/40 p-5 text-white"
+            >
+                <h2 class="text-2xl font-bold">{{ bannerCategoria.nombre }}</h2>
+                <p
+                    v-if="bannerCategoria.descripcion"
+                    class="max-w-2xl text-sm text-white/90"
+                >
+                    {{ bannerCategoria.descripcion }}
+                </p>
+            </div>
+        </div>
+
         <div
             class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
         >
@@ -96,7 +168,7 @@ function descuentoLabel(p: ProductoTienda): string | null {
                     <ImageOff v-else class="h-10 w-10 text-muted-foreground" />
                     <span
                         v-if="descuentoLabel(p)"
-                        class="absolute top-2 left-2 rounded-md bg-emerald-600 px-2 py-0.5 text-xs font-semibold text-white shadow-sm"
+                        class="absolute top-2 left-2 rounded-md bg-emerald-600 px-2.5 py-1 text-base font-bold text-white shadow-md"
                     >
                         {{ descuentoLabel(p) }}
                     </span>
