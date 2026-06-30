@@ -73,6 +73,7 @@ class NegocioSeeder extends Seeder
                     ['Arroz Grano de Oro 5kg', 60, 25.00],
                     ['Aceite de Girasol 5L', 50, 42.00],
                     ['Pack Gaseosa 2L x6', 30, 50.00],
+                    ['Galletas Surtidas', 40, 8.00], // la venta demo vende 3 -> debe tener stock
                 ];
                 $compra = Compra::create([
                     'proveedor_id' => $proveedor->id,

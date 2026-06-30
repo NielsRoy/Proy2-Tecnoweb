@@ -22,7 +22,7 @@ class RolAccionSeeder extends Seeder
             'Vendedor' => [
                 'dashboard' => ['ver'],
                 'productos' => ['listar'],
-                'ventas' => ['listar', 'registrar', 'modificar'],
+                'ventas' => ['listar', 'registrar'],
                 'inventarios' => ['listar'],
                 'promociones' => ['listar'],
                 'pagos' => ['listar', 'registrar'],
@@ -36,7 +36,7 @@ class RolAccionSeeder extends Seeder
             'Proveedor' => [
                 'dashboard' => ['ver'],
                 'productos' => ['listar'],
-                'compras' => ['listar', 'registrar', 'modificar'],
+                'compras' => ['listar', 'registrar'],
                 'inventarios' => ['listar'],
             ],
         ];
