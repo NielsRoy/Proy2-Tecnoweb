@@ -39,6 +39,28 @@ const bannerCategoria = computed<CategoriaTienda | null>(
     () => props.categorias.find((c) => c.id === props.categoriaActiva) ?? null,
 );
 
+// Galeria tipo "bento" (cantidad limitada, ordenada por `orden` desde el server). Solo se ve cuando
+// no hay filtro activo (al elegir una categoria se reemplaza por su banner).
+const galeria = computed<CategoriaTienda[]>(() => props.categorias.slice(0, 5));
+
+// Tamanos variados (alto/ancho) por posicion: teselan una cuadricula de 4 columnas sin huecos.
+const spanGaleria = [
+    'col-span-2 row-span-2',
+    'col-span-2 row-span-1',
+    'col-span-1 row-span-1',
+    'col-span-1 row-span-1',
+    'col-span-2 md:col-span-4 row-span-1',
+];
+
+// Degradados de respaldo cuando una categoria aun no tiene foto subida.
+const gradientes = [
+    'from-emerald-600 to-emerald-400',
+    'from-sky-600 to-sky-400',
+    'from-violet-600 to-violet-400',
+    'from-amber-600 to-amber-400',
+    'from-rose-600 to-rose-400',
+];
+
 // Filtra por categoria sin crear URLs nuevas: solo cambia el query param de /inicio.
 function filtrarPorCategoria(id: number | null): void {
     router.get(
@@ -118,6 +140,40 @@ function descuentoLabel(p: ProductoTienda): string | null {
             >
                 {{ c.nombre }}
             </Button>
+        </div>
+
+        <!-- Galería de categorías (bento): solo cuando no hay filtro activo. Clic = filtra. -->
+        <div
+            v-if="categoriaActiva === null && galeria.length > 0"
+            class="grid auto-rows-[120px] grid-cols-2 gap-3 md:grid-cols-4"
+        >
+            <button
+                v-for="(c, i) in galeria"
+                :key="c.id"
+                type="button"
+                :class="spanGaleria[i]"
+                class="group relative overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border"
+                @click="filtrarPorCategoria(c.id)"
+            >
+                <img
+                    v-if="c.foto_url"
+                    :src="c.foto_url"
+                    :alt="c.nombre"
+                    class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                />
+                <div
+                    v-else
+                    :class="gradientes[i % gradientes.length]"
+                    class="h-full w-full bg-gradient-to-br transition-transform duration-300 group-hover:scale-105"
+                />
+                <div
+                    class="absolute inset-0 flex items-end bg-gradient-to-t from-black/60 to-transparent p-3"
+                >
+                    <span class="text-lg font-bold text-white drop-shadow">
+                        {{ c.nombre }}
+                    </span>
+                </div>
+            </button>
         </div>
 
         <!-- Banner de la categoría activa (foto + nombre + descripción). -->
