@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\AccesoController;
 use App\Http\Controllers\BitacoraController;
+use App\Http\Controllers\CompraController;
+use App\Http\Controllers\InventarioController;
 use App\Http\Controllers\ProductoController;
 use App\Http\Controllers\UsuarioController;
 use Illuminate\Support\Facades\Route;
@@ -50,6 +52,32 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->middleware('permiso:productos,modificar')->name('update');
         Route::delete('{producto}', [ProductoController::class, 'destroy'])
             ->middleware('permiso:productos,eliminar')->name('destroy');
+    });
+
+    // CU3 Compras (modulo "compras"): compra multi-producto. Sin edit/update (anular y re-registrar).
+    // destroy = ANULAR (revierte stock + marca anulada), mapeado al permiso "eliminar".
+    Route::prefix('compras')->name('compras.')->group(function () {
+        Route::get('/', [CompraController::class, 'index'])
+            ->middleware('permiso:compras,listar')->name('index');
+        Route::get('crear', [CompraController::class, 'create'])
+            ->middleware('permiso:compras,registrar')->name('create');
+        Route::post('/', [CompraController::class, 'store'])
+            ->middleware('permiso:compras,registrar')->name('store');
+        Route::get('{compra}', [CompraController::class, 'show'])
+            ->middleware('permiso:compras,listar')->name('show');
+        Route::delete('{compra}', [CompraController::class, 'destroy'])
+            ->middleware('permiso:compras,eliminar')->name('destroy');
+    });
+
+    // CU5 Inventario (modulo "inventarios"): libro append-only. Solo listar y registrar ajuste
+    // (sin edit/update/delete: para corregir se registra otro ajuste en sentido contrario).
+    Route::prefix('inventarios')->name('inventarios.')->group(function () {
+        Route::get('/', [InventarioController::class, 'index'])
+            ->middleware('permiso:inventarios,listar')->name('index');
+        Route::get('crear', [InventarioController::class, 'create'])
+            ->middleware('permiso:inventarios,registrar')->name('create');
+        Route::post('/', [InventarioController::class, 'store'])
+            ->middleware('permiso:inventarios,registrar')->name('store');
     });
 
     // Bitacora (auditoria): vista de solo-lectura del modulo "bitacora".

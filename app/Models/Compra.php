@@ -14,11 +14,16 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $proveedor_id
  * @property \Illuminate\Support\Carbon $fecha_compra
  * @property string $monto_total
+ * @property string $estado
  */
-#[Fillable(['proveedor_id', 'fecha_compra', 'monto_total'])]
+#[Fillable(['proveedor_id', 'fecha_compra', 'monto_total', 'estado'])]
 class Compra extends Model
 {
     protected $table = 'compra';
+
+    public const ESTADO_REGISTRADA = 'registrada';
+
+    public const ESTADO_ANULADA = 'anulada';
 
     protected function casts(): array
     {

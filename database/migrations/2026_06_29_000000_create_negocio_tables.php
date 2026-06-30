@@ -51,6 +51,7 @@ return new class extends Migration
             $table->foreignId('proveedor_id')->constrained('users')->restrictOnDelete();
             $table->date('fecha_compra');
             $table->decimal('monto_total', 10, 2);
+            $table->string('estado')->default('registrada'); // registrada | anulada (anular revierte stock)
             $table->timestamps();
         });
 

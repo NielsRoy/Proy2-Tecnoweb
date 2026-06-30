@@ -81,6 +81,24 @@ class User extends Authenticatable
     }
 
     /**
+     * Scope: usuarios que TIENEN un rol vigente con ese nombre. Reutiliza la misma regla de
+     * vigencia que rolesVigentes(). Lo usa Compras para listar proveedores (y a futuro
+     * Ventas para clientes). Ej: User::conRolVigente('Proveedor')->get(['id', 'name']).
+     */
+    public function scopeConRolVigente($query, string $nombreRol)
+    {
+        $hoy = now()->toDateString();
+
+        return $query->whereHas('roles', function ($q) use ($nombreRol, $hoy) {
+            $q->where('rol.nombre', $nombreRol)
+                ->where('rol.est', true)
+                ->where('usuario_rol.est', true)
+                ->where(fn ($s) => $s->whereNull('usuario_rol.fini')->orWhere('usuario_rol.fini', '<=', $hoy))
+                ->where(fn ($s) => $s->whereNull('usuario_rol.ffin')->orWhere('usuario_rol.ffin', '>=', $hoy));
+        });
+    }
+
+    /**
      * Roles VIGENTES hoy: rol activo, asignacion activa y dentro del rango fini..ffin
      * (cualquiera de los dos puede ser null = sin limite). Es la base de todo el control
      * de acceso: el menu y el guardia solo miran roles vigentes.
