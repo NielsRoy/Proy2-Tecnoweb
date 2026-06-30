@@ -35,7 +35,7 @@ class NegocioSeeder extends Seeder
         foreach ($categorias as [$nombre, $descripcion, $orden]) {
             Categoria::firstOrCreate(
                 ['nombre' => $nombre],
-                ['descripcion' => $descripcion, 'orden' => $orden, 'est' => true],
+                ['descripcion' => $descripcion, 'orden' => $orden, 'activo' => true],
             );
         }
         $catId = fn (string $nombre) => Categoria::where('nombre', $nombre)->value('id');
@@ -57,7 +57,7 @@ class NegocioSeeder extends Seeder
             Producto::firstOrCreate(
                 ['nombre' => $nombre],
                 ['descripcion' => $descripcion, 'precio' => $precio, 'stock' => 0,
-                    'categoria_id' => $catId($categoria), 'est' => true],
+                    'categoria_id' => $catId($categoria), 'activo' => true],
             );
         }
 
@@ -74,7 +74,7 @@ class NegocioSeeder extends Seeder
                     ['producto_id' => $producto->id, 'nombre' => $nombre],
                     [
                         'descripcion' => $desc, 'tipo_descuento' => $tipo, 'valor' => $valor,
-                        'fecha_inicio' => '2026-01-01', 'fecha_fin' => '2026-12-31', 'est' => true,
+                        'fecha_inicio' => '2026-01-01', 'fecha_fin' => '2026-12-31', 'activo' => true,
                     ],
                 );
             }
@@ -124,7 +124,7 @@ class NegocioSeeder extends Seeder
                 $promoArroz = Promocion::where('nombre', 'Oferta Arroz')->first();
                 $galletas = Producto::firstOrCreate(
                     ['nombre' => 'Galletas Surtidas'],
-                    ['descripcion' => 'Paquete de galletas dulces surtidas', 'precio' => 9.99, 'stock' => 0, 'est' => true],
+                    ['descripcion' => 'Paquete de galletas dulces surtidas', 'precio' => 9.99, 'stock' => 0, 'activo' => true],
                 );
 
                 $venta = Venta::create([

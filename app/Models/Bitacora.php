@@ -28,6 +28,9 @@ class Bitacora extends Model
 {
     protected $table = 'bitacora';
 
+    // Append-only: la tabla no tiene updated_at (solo created_at).
+    public const UPDATED_AT = null;
+
     /** Usuario que realizo la operacion (null si no aplica, p. ej. login fallido). */
     public function usuario(): BelongsTo
     {

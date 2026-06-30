@@ -17,16 +17,16 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  * @property string $clave
  * @property string|null $ruta
  * @property string|null $descripcion
- * @property bool $est
+ * @property bool $activo
  */
-#[Fillable(['modulo_id', 'nombre', 'clave', 'ruta', 'descripcion', 'est'])]
+#[Fillable(['modulo_id', 'nombre', 'clave', 'ruta', 'descripcion', 'activo'])]
 class Accion extends Model
 {
     protected $table = 'accion';
 
     protected function casts(): array
     {
-        return ['est' => 'boolean'];
+        return ['activo' => 'boolean'];
     }
 
     /** Modulo al que pertenece esta accion. */

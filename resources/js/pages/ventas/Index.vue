@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { reactive, ref } from 'vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -12,7 +12,9 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { create, destroy, index, show } from '@/routes/ventas';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { create, destroy, index, reporte, show } from '@/routes/ventas';
 
 type VentaItem = {
     id: number;
@@ -36,8 +38,19 @@ type Paginado = {
     next_page_url: string | null;
 };
 
-defineProps<{
+type Filtros = {
+    cliente_id: number | null;
+    tipo_pago: string | null;
+    estado_pago: string | null;
+    estado: string | null;
+    desde: string | null;
+    hasta: string | null;
+};
+
+const props = defineProps<{
     ventas: Paginado;
+    filtros: Filtros;
+    clientes: { id: number; name: string }[];
     puedeCrear: boolean;
     puedeEliminar: boolean;
 }>();
@@ -48,11 +61,59 @@ defineOptions({
     },
 });
 
+const filtros = reactive({
+    cliente_id:
+        props.filtros.cliente_id != null ? String(props.filtros.cliente_id) : '',
+    tipo_pago: props.filtros.tipo_pago ?? '',
+    estado_pago: props.filtros.estado_pago ?? '',
+    estado: props.filtros.estado ?? '',
+    desde: props.filtros.desde ?? '',
+    hasta: props.filtros.hasta ?? '',
+});
+
+function queryFiltros(): Record<string, string> {
+    const query: Record<string, string> = {};
+    Object.entries(filtros).forEach(([clave, valor]) => {
+        if (valor !== '' && valor != null) {
+            query[clave] = String(valor);
+        }
+    });
+    return query;
+}
+
+function aplicar(): void {
+    router.get(index().url, queryFiltros(), {
+        preserveScroll: true,
+        preserveState: true,
+        replace: true,
+    });
+}
+
+function limpiar(): void {
+    filtros.cliente_id = '';
+    filtros.tipo_pago = '';
+    filtros.estado_pago = '';
+    filtros.estado = '';
+    filtros.desde = '';
+    filtros.hasta = '';
+    router.get(index().url, {}, { preserveScroll: true, replace: true });
+}
+
+// Descarga del reporte (PDF/CSV) con los filtros actuales. Es una descarga, no Inertia.
+function exportar(formato: 'pdf' | 'csv'): void {
+    const q = new URLSearchParams(queryFiltros());
+    q.set('formato', formato);
+    window.open(`${reporte().url}?${q.toString()}`, '_blank');
+}
+
 function irA(url: string | null): void {
     if (url) {
         router.get(url, {}, { preserveScroll: true, preserveState: true });
     }
 }
+
+const selectClass =
+    'flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm dark:bg-input/30';
 
 const ventaAAnular = ref<VentaItem | null>(null);
 const anulando = ref(false);
@@ -88,6 +149,79 @@ function confirmarAnular(): void {
                 <Link :href="create()">Nueva venta</Link>
             </Button>
         </header>
+
+        <!-- Filtros -->
+        <div
+            class="grid gap-3 rounded-xl border border-sidebar-border/70 p-3 sm:grid-cols-2 lg:grid-cols-6 dark:border-sidebar-border"
+        >
+            <div class="grid gap-1.5">
+                <Label for="f-cliente">Cliente</Label>
+                <select
+                    id="f-cliente"
+                    v-model="filtros.cliente_id"
+                    :class="selectClass"
+                >
+                    <option value="">Todos</option>
+                    <option
+                        v-for="c in clientes"
+                        :key="c.id"
+                        :value="String(c.id)"
+                    >
+                        {{ c.name }}
+                    </option>
+                </select>
+            </div>
+            <div class="grid gap-1.5">
+                <Label for="f-tipo">Tipo de pago</Label>
+                <select id="f-tipo" v-model="filtros.tipo_pago" :class="selectClass">
+                    <option value="">Todos</option>
+                    <option value="contado">Contado</option>
+                    <option value="credito">Crédito</option>
+                </select>
+            </div>
+            <div class="grid gap-1.5">
+                <Label for="f-epago">Estado de pago</Label>
+                <select
+                    id="f-epago"
+                    v-model="filtros.estado_pago"
+                    :class="selectClass"
+                >
+                    <option value="">Todos</option>
+                    <option value="pendiente">Pendiente</option>
+                    <option value="pagada">Pagada</option>
+                </select>
+            </div>
+            <div class="grid gap-1.5">
+                <Label for="f-estado">Estado</Label>
+                <select id="f-estado" v-model="filtros.estado" :class="selectClass">
+                    <option value="">Todos</option>
+                    <option value="registrada">Registrada</option>
+                    <option value="anulada">Anulada</option>
+                </select>
+            </div>
+            <div class="grid gap-1.5">
+                <Label for="f-desde">Desde</Label>
+                <Input id="f-desde" type="date" v-model="filtros.desde" />
+            </div>
+            <div class="grid gap-1.5">
+                <Label for="f-hasta">Hasta</Label>
+                <Input id="f-hasta" type="date" v-model="filtros.hasta" />
+            </div>
+            <div
+                class="flex flex-wrap items-end gap-2 sm:col-span-2 lg:col-span-6"
+            >
+                <Button @click="aplicar">Filtrar</Button>
+                <Button variant="outline" @click="limpiar">Limpiar</Button>
+                <div class="ml-auto flex gap-2">
+                    <Button variant="outline" @click="exportar('pdf')">
+                        Exportar PDF
+                    </Button>
+                    <Button variant="outline" @click="exportar('csv')">
+                        Exportar Excel
+                    </Button>
+                </div>
+            </div>
+        </div>
 
         <div
             class="overflow-x-auto rounded-xl border border-sidebar-border/70 dark:border-sidebar-border"
@@ -175,7 +309,7 @@ function confirmarAnular(): void {
                             colspan="7"
                             class="p-6 text-center text-muted-foreground"
                         >
-                            No hay ventas registradas.
+                            No hay ventas que coincidan con los filtros.
                         </td>
                     </tr>
                 </tbody>

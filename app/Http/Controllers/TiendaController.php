@@ -24,7 +24,7 @@ class TiendaController extends Controller
         $categoriaId = $request->integer('categoria') ?: null;
 
         // Categorias activas con productos visibles (para los botones de filtro y el banner activo).
-        $categorias = Categoria::where('est', true)
+        $categorias = Categoria::where('activo', true)
             ->orderBy('orden')
             ->orderBy('nombre')
             ->get()
@@ -40,7 +40,7 @@ class TiendaController extends Controller
 
         $promosVigentes = Promocion::vigente()->get()->keyBy('producto_id');
 
-        $productos = Producto::where('est', true)
+        $productos = Producto::where('activo', true)
             ->when($categoriaActiva, fn ($q, $id) => $q->where('categoria_id', $id))
             ->orderBy('nombre')->get()
             ->map(function (Producto $p) use ($promosVigentes) {

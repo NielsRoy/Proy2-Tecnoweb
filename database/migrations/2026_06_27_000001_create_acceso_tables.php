@@ -23,7 +23,7 @@ return new class extends Migration
             $table->id();
             $table->string('nombre')->unique();
             $table->string('descripcion')->nullable();
-            $table->boolean('est')->default(true); // activo/inactivo (patron del docente)
+            $table->boolean('activo')->default(true); // activo/inactivo (patron del docente)
             $table->timestamps();
         });
 
@@ -39,7 +39,7 @@ return new class extends Migration
             $table->unsignedInteger('orden')->default(0);     // orden de aparicion en el menu
             $table->foreignId('padre_id')->nullable()         // self-FK: submenu
                 ->constrained('modulo')->nullOnDelete();
-            $table->boolean('est')->default(true);
+            $table->boolean('activo')->default(true);
             $table->timestamps();
         });
 
@@ -52,7 +52,7 @@ return new class extends Migration
             $table->string('clave');                          // slug estable (ej. "registrar")
             $table->string('ruta')->nullable();               // nombre de ruta concreta (opcional)
             $table->string('descripcion')->nullable();
-            $table->boolean('est')->default(true);
+            $table->boolean('activo')->default(true);
             $table->timestamps();
 
             $table->unique(['modulo_id', 'clave']);           // clave unica dentro de cada modulo
@@ -62,7 +62,7 @@ return new class extends Migration
         Schema::create('rol_accion', function (Blueprint $table) {
             $table->foreignId('rol_id')->constrained('rol')->cascadeOnDelete();
             $table->foreignId('accion_id')->constrained('accion')->cascadeOnDelete();
-            $table->timestamps();
+            // Pivote puro de la matriz (sync inserta/borra, nunca actualiza): sin timestamps.
 
             $table->primary(['rol_id', 'accion_id']);         // PK compuesta: un par no se repite
         });
@@ -74,7 +74,7 @@ return new class extends Migration
             $table->foreignId('rol_id')->constrained('rol')->cascadeOnDelete();
             $table->date('fini')->nullable();                 // inicio de vigencia
             $table->date('ffin')->nullable();                 // fin de vigencia (null = sin limite)
-            $table->boolean('est')->default(true);
+            $table->boolean('activo')->default(true);
             $table->timestamps();
 
             $table->primary(['user_id', 'rol_id']);

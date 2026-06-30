@@ -35,7 +35,7 @@ class UsuarioController extends Controller
     public function index(Request $request): Response
     {
         $usuarios = User::query()
-            ->with(['roles' => fn ($q) => $q->wherePivot('est', true)])
+            ->with(['roles' => fn ($q) => $q->wherePivot('activo', true)])
             ->orderBy('name')
             ->get()
             ->map(fn (User $u) => [
@@ -100,7 +100,7 @@ class UsuarioController extends Controller
                 'id' => $usuario->id,
                 'name' => $usuario->name,
                 'email' => $usuario->email,
-                'rol_id' => $usuario->roles()->wherePivot('est', true)->first()?->id,
+                'rol_id' => $usuario->roles()->wherePivot('activo', true)->first()?->id,
             ],
             'roles' => $this->rolesParaFormulario($usuario),
             // Al Propietario no se le puede cambiar el rol: el selector va bloqueado.
@@ -177,7 +177,7 @@ class UsuarioController extends Controller
             return Rol::where('nombre', self::ROL_PROPIETARIO)->get(['id', 'nombre']);
         }
 
-        return Rol::where('est', true)
+        return Rol::where('activo', true)
             ->where('nombre', '!=', self::ROL_PROPIETARIO)
             ->orderBy('nombre')
             ->get(['id', 'nombre']);
@@ -188,7 +188,7 @@ class UsuarioController extends Controller
     {
         return $usuario->roles()
             ->where('rol.nombre', self::ROL_PROPIETARIO)
-            ->wherePivot('est', true)
+            ->wherePivot('activo', true)
             ->exists();
     }
 
@@ -220,7 +220,7 @@ class UsuarioController extends Controller
     private function asignarRol(User $usuario, int $rolId): void
     {
         $usuario->roles()->sync([
-            $rolId => ['fini' => now()->toDateString(), 'ffin' => null, 'est' => true],
+            $rolId => ['fini' => now()->toDateString(), 'ffin' => null, 'activo' => true],
         ]);
     }
 }

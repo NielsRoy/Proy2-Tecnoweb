@@ -54,7 +54,7 @@ class InventarioController extends Controller
         return Inertia::render('inventarios/Index', [
             'movimientos' => $movimientos,
             'filtros' => $filtros,
-            'productos' => Producto::where('est', true)->orderBy('nombre')->get(['id', 'nombre']),
+            'productos' => Producto::where('activo', true)->orderBy('nombre')->get(['id', 'nombre']),
             'puedeCrear' => $request->user()->tienePermiso('inventarios', 'registrar'),
         ]);
     }
@@ -62,7 +62,7 @@ class InventarioController extends Controller
     public function create(): Response
     {
         return Inertia::render('inventarios/Form', [
-            'productos' => Producto::where('est', true)->orderBy('nombre')->get(['id', 'nombre', 'stock']),
+            'productos' => Producto::where('activo', true)->orderBy('nombre')->get(['id', 'nombre', 'stock']),
         ]);
     }
 

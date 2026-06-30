@@ -33,10 +33,10 @@ class CreateNewUser implements CreatesNewUsers
 
         // Todo usuario que se registra recibe el rol Cliente (rol de negocio publico),
         // con vigencia desde hoy y sin fecha de fin. Asi obtiene su menu al instante.
-        $cliente = Rol::where('nombre', 'Cliente')->where('est', true)->first();
+        $cliente = Rol::where('nombre', 'Cliente')->where('activo', true)->first();
         if ($cliente) {
             $user->roles()->syncWithoutDetaching([
-                $cliente->id => ['fini' => now()->toDateString(), 'ffin' => null, 'est' => true],
+                $cliente->id => ['fini' => now()->toDateString(), 'ffin' => null, 'activo' => true],
             ]);
         }
 

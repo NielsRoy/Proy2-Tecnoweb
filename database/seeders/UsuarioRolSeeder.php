@@ -36,7 +36,7 @@ class UsuarioRolSeeder extends Seeder
 
             // Asignacion con vigencia: empieza hoy, sin fecha de fin (ffin = null).
             $user->roles()->syncWithoutDetaching([
-                $rol->id => ['fini' => now()->toDateString(), 'ffin' => null, 'est' => true],
+                $rol->id => ['fini' => now()->toDateString(), 'ffin' => null, 'activo' => true],
             ]);
         }
     }

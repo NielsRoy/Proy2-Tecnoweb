@@ -17,9 +17,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $valor
  * @property \Illuminate\Support\Carbon $fecha_inicio
  * @property \Illuminate\Support\Carbon $fecha_fin
- * @property bool $est
+ * @property bool $activo
  */
-#[Fillable(['producto_id', 'nombre', 'descripcion', 'tipo_descuento', 'valor', 'fecha_inicio', 'fecha_fin', 'est'])]
+#[Fillable(['producto_id', 'nombre', 'descripcion', 'tipo_descuento', 'valor', 'fecha_inicio', 'fecha_fin', 'activo'])]
 class Promocion extends Model
 {
     protected $table = 'promocion';
@@ -34,7 +34,7 @@ class Promocion extends Model
             'valor' => 'decimal:2',
             'fecha_inicio' => 'date',
             'fecha_fin' => 'date',
-            'est' => 'boolean',
+            'activo' => 'boolean',
         ];
     }
 
@@ -48,7 +48,7 @@ class Promocion extends Model
     {
         $hoy = today()->toDateString();
 
-        return $query->where('est', true)
+        return $query->where('activo', true)
             ->whereDate('fecha_inicio', '<=', $hoy)
             ->whereDate('fecha_fin', '>=', $hoy);
     }

@@ -23,6 +23,9 @@ class DetalleVenta extends Model
 {
     protected $table = 'detalle_venta';
 
+    // Append-only: la tabla no tiene updated_at (solo created_at).
+    public const UPDATED_AT = null;
+
     public $incrementing = false;
 
     protected $primaryKey = null;

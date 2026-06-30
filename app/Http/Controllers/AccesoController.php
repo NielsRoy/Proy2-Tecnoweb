@@ -28,11 +28,11 @@ class AccesoController extends Controller
         // modo solo-lectura (checkboxes deshabilitados y sin boton de guardar en el front).
         $puedeEditar = $request->user()->tienePermiso('acceso', 'modificar');
 
-        $roles = Rol::where('est', true)->orderBy('id')->get(['id', 'nombre', 'descripcion']);
+        $roles = Rol::where('activo', true)->orderBy('id')->get(['id', 'nombre', 'descripcion']);
 
-        $modulos = Modulo::where('est', true)
+        $modulos = Modulo::where('activo', true)
             ->orderBy('orden')->orderBy('id')
-            ->with(['acciones' => fn ($q) => $q->where('est', true)->orderBy('id')])
+            ->with(['acciones' => fn ($q) => $q->where('activo', true)->orderBy('id')])
             ->get(['id', 'clave', 'nombre', 'orden']);
 
         // Asignaciones actuales como mapa  rol_id => [accion_id, ...]  (comodo para los checkboxes).
@@ -75,7 +75,7 @@ class AccesoController extends Controller
 
         $todasLasAcciones = Accion::pluck('id')->all();
 
-        foreach (Rol::where('est', true)->get() as $rol) {
+        foreach (Rol::where('activo', true)->get() as $rol) {
             // El super-rol siempre conserva todo, ignorando lo que llegue (anti auto-bloqueo).
             if ($rol->nombre === self::ROL_SUPER) {
                 $rol->acciones()->sync($todasLasAcciones);
@@ -120,7 +120,7 @@ class AccesoController extends Controller
         if ($modulosConEscritura->isNotEmpty()) {
             $ids = $ids->merge(
                 Accion::whereIn('modulo_id', $modulosConEscritura)
-                    ->where('clave', 'listar')->where('est', true)
+                    ->where('clave', 'listar')->where('activo', true)
                     ->pluck('id'),
             );
         }

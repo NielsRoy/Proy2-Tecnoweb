@@ -7,6 +7,8 @@ use App\Models\Compra;
 use App\Models\Inventario;
 use App\Models\Producto;
 use App\Models\User;
+use App\Support\Reporte;
+use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -28,11 +30,9 @@ class CompraController extends Controller
 {
     public function index(Request $request): Response
     {
-        $compras = Compra::query()
-            ->with('proveedor:id,name')
-            ->withCount('detalles')
-            ->orderByDesc('fecha_compra')
-            ->orderByDesc('id')
+        [$filtros, $query] = $this->consultaFiltrada($request);
+
+        $compras = $query
             ->paginate(20)
             ->withQueryString()
             ->through(fn (Compra $c) => [
@@ -46,16 +46,105 @@ class CompraController extends Controller
 
         return Inertia::render('compras/Index', [
             'compras' => $compras,
+            'filtros' => $filtros,
+            'proveedores' => User::conRolVigente('Proveedor')->orderBy('name')->get(['id', 'name']),
             'puedeCrear' => $request->user()->tienePermiso('compras', 'registrar'),
             'puedeEliminar' => $request->user()->tienePermiso('compras', 'eliminar'),
         ]);
+    }
+
+    /**
+     * Genera el reporte de la lista FILTRADA en PDF o CSV (Excel). Reusa los mismos filtros que el
+     * index. Contenido: una fila por compra + total. Ruta protegida con permiso:compras,listar.
+     */
+    public function reporte(Request $request): mixed
+    {
+        $formato = $request->string('formato')->toString() === 'pdf' ? 'pdf' : 'csv';
+        [$filtros, $query] = $this->consultaFiltrada($request);
+        $compras = $query->get();
+
+        $columnas = ['Fecha', 'Proveedor', 'Ítems', 'Total (Bs)', 'Estado'];
+        $filas = $compras->map(fn (Compra $c) => [
+            $c->fecha_compra?->format('d/m/Y'),
+            $c->proveedor?->name,
+            $c->detalles_count,
+            number_format((float) $c->monto_total, 2, '.', ''),
+            $c->estado === Compra::ESTADO_ANULADA ? 'Anulada' : 'Registrada',
+        ])->all();
+        $sumaTotal = number_format((float) $compras->sum('monto_total'), 2, '.', '');
+        $filaTotal = ['TOTAL', '', '', $sumaTotal, ''];
+        $nombre = 'compras_'.now()->format('Ymd_His');
+
+        if ($formato === 'pdf') {
+            return Reporte::pdf([
+                'titulo' => 'Reporte de Compras',
+                'subtitulo' => $this->descripcionFiltros($filtros),
+                'columnas' => $columnas,
+                'filas' => $filas,
+                'filaTotal' => $filaTotal,
+            ], "{$nombre}.pdf");
+        }
+
+        // CSV: agregar la fila de TOTAL al final (alineada a la columna de monto).
+        $filas[] = $filaTotal;
+
+        return Reporte::csv($columnas, $filas, "{$nombre}.csv");
+    }
+
+    /**
+     * Construye la consulta de compras aplicando los filtros del request (proveedor/estado/fechas).
+     * La comparten index() (pagina) y reporte() (->get()).
+     *
+     * @return array{0: array<string, mixed>, 1: Builder}
+     */
+    private function consultaFiltrada(Request $request): array
+    {
+        $filtros = [
+            'proveedor_id' => $request->integer('proveedor_id') ?: null,
+            'estado' => $request->string('estado')->toString() ?: null,
+            'desde' => $request->date('desde')?->toDateString(),
+            'hasta' => $request->date('hasta')?->toDateString(),
+        ];
+
+        $query = Compra::query()
+            ->with('proveedor:id,name')
+            ->withCount('detalles')
+            ->when($filtros['proveedor_id'], fn ($q, $id) => $q->where('proveedor_id', $id))
+            ->when($filtros['estado'], fn ($q, $e) => $q->where('estado', $e))
+            ->when($filtros['desde'], fn ($q, $d) => $q->whereDate('fecha_compra', '>=', $d))
+            ->when($filtros['hasta'], fn ($q, $h) => $q->whereDate('fecha_compra', '<=', $h))
+            ->orderByDesc('fecha_compra')
+            ->orderByDesc('id');
+
+        return [$filtros, $query];
+    }
+
+    /** Texto legible de los filtros aplicados (para el subtitulo del reporte). */
+    private function descripcionFiltros(array $f): string
+    {
+        $partes = [];
+        if ($f['proveedor_id']) {
+            $partes[] = 'Proveedor: '.(User::find($f['proveedor_id'])?->name ?? $f['proveedor_id']);
+        }
+        if ($f['estado']) {
+            $partes[] = 'Estado: '.ucfirst($f['estado']);
+        }
+        if ($f['desde']) {
+            $partes[] = 'Desde: '.$f['desde'];
+        }
+        if ($f['hasta']) {
+            $partes[] = 'Hasta: '.$f['hasta'];
+        }
+        $txt = $partes ? implode(' · ', $partes) : 'Sin filtros (todas las compras)';
+
+        return $txt.' — Generado: '.now()->format('d/m/Y H:i');
     }
 
     public function create(): Response
     {
         return Inertia::render('compras/Form', [
             'proveedores' => User::conRolVigente('Proveedor')->orderBy('name')->get(['id', 'name']),
-            'productos' => Producto::where('est', true)->orderBy('nombre')->get(['id', 'nombre', 'precio', 'stock']),
+            'productos' => Producto::where('activo', true)->orderBy('nombre')->get(['id', 'nombre', 'precio', 'stock']),
         ]);
     }
 
@@ -186,7 +275,7 @@ class CompraController extends Controller
             'lineas' => ['required', 'array', 'min:1'],
             'lineas.*.producto_id' => [
                 'required', 'integer', 'distinct',
-                Rule::exists('producto', 'id')->where('est', true),
+                Rule::exists('producto', 'id')->where('activo', true),
             ],
             'lineas.*.cantidad' => ['required', 'integer', 'min:1', 'max:1000000'],
             'lineas.*.precio_unitario' => ['required', 'numeric', 'min:0', 'max:99999999.99'],

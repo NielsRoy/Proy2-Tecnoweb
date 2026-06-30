@@ -150,7 +150,7 @@ class RegistrarVenta
         $base = 0;
 
         foreach ($lineasInput as $i => $entrada) {
-            $producto = Producto::where('est', true)->findOrFail($entrada['producto_id']);
+            $producto = Producto::where('activo', true)->findOrFail($entrada['producto_id']);
 
             if ($producto->stock < $entrada['cantidad']) {
                 throw ValidationException::withMessages([

@@ -12,30 +12,30 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  * @property int $id
  * @property string $nombre
  * @property string|null $descripcion
- * @property bool $est
+ * @property bool $activo
  */
-#[Fillable(['nombre', 'descripcion', 'est'])]
+#[Fillable(['nombre', 'descripcion', 'activo'])]
 class Rol extends Model
 {
     protected $table = 'rol';
 
     protected function casts(): array
     {
-        return ['est' => 'boolean'];
+        return ['activo' => 'boolean'];
     }
 
     /** Acciones que tiene este rol (la matriz de acceso, fila por rol). */
     public function acciones(): BelongsToMany
     {
-        return $this->belongsToMany(Accion::class, 'rol_accion', 'rol_id', 'accion_id')
-            ->withTimestamps();
+        // La matriz es un pivote puro (sync inserta/borra filas, nunca las actualiza): sin timestamps.
+        return $this->belongsToMany(Accion::class, 'rol_accion', 'rol_id', 'accion_id');
     }
 
     /** Usuarios que tienen este rol (con vigencia en el pivote). */
     public function usuarios(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'usuario_rol', 'rol_id', 'user_id')
-            ->withPivot(['fini', 'ffin', 'est'])
+            ->withPivot(['fini', 'ffin', 'activo'])
             ->withTimestamps();
     }
 }

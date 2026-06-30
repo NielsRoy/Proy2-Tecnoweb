@@ -46,13 +46,13 @@ class ModuloSeeder extends Seeder
                 'ruta' => $m['ruta'],
                 'orden' => $m['orden'],
                 'padre_id' => null,
-                'est' => true,
+                'activo' => true,
             ]);
 
             foreach ($m['acciones'] as $clave => $nombre) {
                 Accion::updateOrCreate(
                     ['modulo_id' => $modulo->id, 'clave' => $clave],
-                    ['nombre' => $nombre, 'est' => true],
+                    ['nombre' => $nombre, 'activo' => true],
                 );
             }
         }

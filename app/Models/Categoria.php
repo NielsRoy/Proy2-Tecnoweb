@@ -15,9 +15,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string|null $descripcion
  * @property string|null $foto
  * @property int $orden
- * @property bool $est
+ * @property bool $activo
  */
-#[Fillable(['nombre', 'descripcion', 'foto', 'orden', 'est'])]
+#[Fillable(['nombre', 'descripcion', 'foto', 'orden', 'activo'])]
 class Categoria extends Model
 {
     protected $table = 'categoria';
@@ -26,7 +26,7 @@ class Categoria extends Model
     {
         return [
             'orden' => 'integer',
-            'est' => 'boolean',
+            'activo' => 'boolean',
         ];
     }
 

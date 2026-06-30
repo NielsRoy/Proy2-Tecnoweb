@@ -18,19 +18,19 @@ return new class extends Migration
     public function up(): void
     {
         // Categoria de productos. `foto` sirve de banner en la tienda; `orden` controla la secuencia
-        // de aparicion en la tienda (no hay subcategorias). `est=false` = baja logica.
+        // de aparicion en la tienda (no hay subcategorias). `activo=false` = baja logica.
         Schema::create('categoria', function (Blueprint $table) {
             $table->id();
             $table->string('nombre');
             $table->text('descripcion')->nullable();
             $table->string('foto')->nullable();        // banner de la tienda (ruta en storage)
             $table->integer('orden')->default(0);      // orden de aparicion en la tienda
-            $table->boolean('est')->default(true);     // activo / soft-delete
+            $table->boolean('activo')->default(true);  // activo / soft-delete
             $table->timestamps();
         });
 
         // Catalogo de productos. `stock` es denormalizado (lo mueven compra/venta/inventario,
-        // con `inventario` como libro mayor). `est=false` = baja logica (lo referencian ventas).
+        // con `inventario` como libro mayor). `activo=false` = baja logica (lo referencian ventas).
         Schema::create('producto', function (Blueprint $table) {
             $table->id();
             $table->string('nombre');
@@ -39,11 +39,11 @@ return new class extends Migration
             $table->integer('stock')->default(0);
             $table->string('foto')->nullable();        // ruta del archivo en storage (subida futura)
             $table->foreignId('categoria_id')->nullable()->constrained('categoria')->nullOnDelete();
-            $table->boolean('est')->default(true);     // activo en catalogo / soft-delete
+            $table->boolean('activo')->default(true);  // activo en catalogo / soft-delete
             $table->timestamps();
         });
 
-        // Promocion (CU6): descuento por producto. `est` cumple el rol del viejo `activo`
+        // Promocion (CU6): descuento por producto. `activo` cumple el rol del viejo `activo`
         // (soft-delete: las ventas que la aplicaron la siguen referenciando).
         Schema::create('promocion', function (Blueprint $table) {
             $table->id();
@@ -54,7 +54,7 @@ return new class extends Migration
             $table->decimal('valor', 10, 2);
             $table->date('fecha_inicio');
             $table->date('fecha_fin');
-            $table->boolean('est')->default(true);
+            $table->boolean('activo')->default(true);
             $table->timestamps();
         });
 
@@ -75,7 +75,7 @@ return new class extends Migration
             $table->integer('cantidad');
             $table->decimal('precio_unitario', 10, 2);  // costo unitario de compra
             $table->decimal('subtotal', 10, 2);
-            $table->timestamps();
+            $table->timestamp('created_at')->nullable(); // append-only: sin updated_at
 
             $table->primary(['compra_id', 'producto_id']);
         });
@@ -104,7 +104,7 @@ return new class extends Migration
             $table->decimal('precio_unitario', 10, 2);   // precio ya con descuento
             $table->decimal('subtotal', 10, 2);
             $table->foreignId('promocion_id')->nullable()->constrained('promocion')->nullOnDelete();
-            $table->timestamps();
+            $table->timestamp('created_at')->nullable(); // append-only: sin updated_at
 
             $table->primary(['venta_id', 'producto_id']);
         });
@@ -117,7 +117,7 @@ return new class extends Migration
             $table->string('tipo_movimiento');                 // 'ingreso' | 'salida'
             $table->date('fecha_movimiento');
             $table->string('motivo')->default('ajuste');       // compra|venta|correccion|ajuste|inicial
-            $table->timestamps();
+            $table->timestamp('created_at')->nullable();       // append-only: sin updated_at
         });
 
         // Pago (CU7): cada fila = una CUOTA del cronograma de una venta.

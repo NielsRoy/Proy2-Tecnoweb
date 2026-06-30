@@ -44,11 +44,11 @@ class CarritoController extends Controller
     public function agregar(Request $request): RedirectResponse
     {
         $datos = $request->validate([
-            'producto_id' => ['required', 'integer', Rule::exists('producto', 'id')->where('est', true)],
+            'producto_id' => ['required', 'integer', Rule::exists('producto', 'id')->where('activo', true)],
             'cantidad' => ['nullable', 'integer', 'min:1', 'max:1000000'],
         ], [], ['producto_id' => 'producto']);
 
-        $producto = Producto::where('est', true)->findOrFail($datos['producto_id']);
+        $producto = Producto::where('activo', true)->findOrFail($datos['producto_id']);
 
         if ($producto->stock < 1) {
             $this->toastError("«{$producto->nombre}» no tiene stock disponible.");

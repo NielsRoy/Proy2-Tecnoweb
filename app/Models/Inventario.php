@@ -21,6 +21,9 @@ class Inventario extends Model
 {
     protected $table = 'inventario';
 
+    // Append-only: la tabla no tiene updated_at (solo created_at).
+    public const UPDATED_AT = null;
+
     // Tipos de movimiento (direccion del stock).
     public const INGRESO = 'ingreso';
 

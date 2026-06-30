@@ -18,16 +18,16 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string|null $ruta
  * @property int $orden
  * @property int|null $padre_id
- * @property bool $est
+ * @property bool $activo
  */
-#[Fillable(['clave', 'nombre', 'descripcion', 'icono', 'ruta', 'orden', 'padre_id', 'est'])]
+#[Fillable(['clave', 'nombre', 'descripcion', 'icono', 'ruta', 'orden', 'padre_id', 'activo'])]
 class Modulo extends Model
 {
     protected $table = 'modulo';
 
     protected function casts(): array
     {
-        return ['est' => 'boolean'];
+        return ['activo' => 'boolean'];
     }
 
     /** Acciones (sub-opciones) de este modulo. */

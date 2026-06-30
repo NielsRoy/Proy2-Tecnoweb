@@ -14,7 +14,7 @@ use Inertia\Response;
 
 /**
  * CU6 Promociones (modulo "promociones"): descuento por producto. Eliminar = BAJA LOGICA
- * (est=false) porque la referencian las ventas (detalle_venta.promocion_id). Regla clave: no se
+ * (activo=false) porque la referencian las ventas (detalle_venta.promocion_id). Regla clave: no se
  * permiten dos promos ACTIVAS del mismo producto con rangos de fecha solapados.
  */
 class PromocionController extends Controller
@@ -24,7 +24,7 @@ class PromocionController extends Controller
         $hoy = today()->toDateString();
 
         $promociones = Promocion::with('producto:id,nombre')
-            ->where('est', true)
+            ->where('activo', true)
             ->orderByDesc('fecha_inicio')
             ->get()
             ->map(fn (Promocion $p) => [
@@ -51,7 +51,7 @@ class PromocionController extends Controller
     {
         return Inertia::render('promociones/Form', [
             'promocion' => null,
-            'productos' => Producto::where('est', true)->orderBy('nombre')->get(['id', 'nombre']),
+            'productos' => Producto::where('activo', true)->orderBy('nombre')->get(['id', 'nombre']),
         ]);
     }
 
@@ -59,7 +59,7 @@ class PromocionController extends Controller
     {
         $datos = $this->validar($request);
 
-        $promocion = Promocion::create([...$datos, 'est' => true]);
+        $promocion = Promocion::create([...$datos, 'activo' => true]);
 
         Bitacora::registrar('crear', "Creó la promoción «{$promocion->nombre}»", 'promociones');
         $this->toastExito('Promoción creada.');
@@ -80,7 +80,7 @@ class PromocionController extends Controller
                 'fecha_inicio' => $promocion->fecha_inicio?->toDateString(),
                 'fecha_fin' => $promocion->fecha_fin?->toDateString(),
             ],
-            'productos' => Producto::where('est', true)->orderBy('nombre')->get(['id', 'nombre']),
+            'productos' => Producto::where('activo', true)->orderBy('nombre')->get(['id', 'nombre']),
         ]);
     }
 
@@ -99,7 +99,7 @@ class PromocionController extends Controller
     public function destroy(Promocion $promocion): RedirectResponse
     {
         // Baja logica (la referencian las ventas vía detalle_venta.promocion_id).
-        $promocion->update(['est' => false]);
+        $promocion->update(['activo' => false]);
 
         Bitacora::registrar('eliminar', "Dio de baja la promoción «{$promocion->nombre}»", 'promociones');
         $this->toastExito('Promoción eliminada.');
@@ -116,7 +116,7 @@ class PromocionController extends Controller
     private function validar(Request $request, ?Promocion $promocion = null): array
     {
         $datos = $request->validate([
-            'producto_id' => ['required', 'integer', Rule::exists('producto', 'id')->where('est', true)],
+            'producto_id' => ['required', 'integer', Rule::exists('producto', 'id')->where('activo', true)],
             'nombre' => ['required', 'string', 'max:255'],
             'descripcion' => ['nullable', 'string', 'max:1000'],
             'tipo_descuento' => ['required', Rule::in([Promocion::TIPO_PORCENTAJE, Promocion::TIPO_MONTO])],
@@ -139,7 +139,7 @@ class PromocionController extends Controller
 
         // No solapar con otra promo activa del mismo producto.
         $solapa = Promocion::where('producto_id', $datos['producto_id'])
-            ->where('est', true)
+            ->where('activo', true)
             ->when($promocion, fn ($q) => $q->where('id', '!=', $promocion->id))
             ->whereDate('fecha_inicio', '<=', $datos['fecha_fin'])
             ->whereDate('fecha_fin', '>=', $datos['fecha_inicio'])

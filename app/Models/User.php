@@ -54,7 +54,7 @@ class User extends Authenticatable
     public function roles(): BelongsToMany
     {
         return $this->belongsToMany(Rol::class, 'usuario_rol', 'user_id', 'rol_id')
-            ->withPivot(['fini', 'ffin', 'est'])
+            ->withPivot(['fini', 'ffin', 'activo'])
             ->withTimestamps();
     }
 
@@ -91,8 +91,8 @@ class User extends Authenticatable
 
         return $query->whereHas('roles', function ($q) use ($nombreRol, $hoy) {
             $q->where('rol.nombre', $nombreRol)
-                ->where('rol.est', true)
-                ->where('usuario_rol.est', true)
+                ->where('rol.activo', true)
+                ->where('usuario_rol.activo', true)
                 ->where(fn ($s) => $s->whereNull('usuario_rol.fini')->orWhere('usuario_rol.fini', '<=', $hoy))
                 ->where(fn ($s) => $s->whereNull('usuario_rol.ffin')->orWhere('usuario_rol.ffin', '>=', $hoy));
         });
@@ -108,8 +108,8 @@ class User extends Authenticatable
         $hoy = now()->toDateString();
 
         return $this->roles()
-            ->where('rol.est', true)
-            ->wherePivot('est', true)
+            ->where('rol.activo', true)
+            ->wherePivot('activo', true)
             ->where(fn ($q) => $q->whereNull('usuario_rol.fini')->orWhere('usuario_rol.fini', '<=', $hoy))
             ->where(fn ($q) => $q->whereNull('usuario_rol.ffin')->orWhere('usuario_rol.ffin', '>=', $hoy));
     }
@@ -129,8 +129,8 @@ class User extends Authenticatable
         }
 
         return Accion::query()
-            ->where('accion.est', true)
-            ->whereHas('modulo', fn ($q) => $q->where('est', true))
+            ->where('accion.activo', true)
+            ->whereHas('modulo', fn ($q) => $q->where('activo', true))
             ->whereHas('roles', fn ($q) => $q->whereIn('rol.id', $rolIds))
             ->with('modulo')
             ->get();
@@ -150,8 +150,8 @@ class User extends Authenticatable
 
         return Accion::query()
             ->where('accion.clave', $accionClave)
-            ->where('accion.est', true)
-            ->whereHas('modulo', fn ($q) => $q->where('clave', $moduloClave)->where('est', true))
+            ->where('accion.activo', true)
+            ->whereHas('modulo', fn ($q) => $q->where('clave', $moduloClave)->where('activo', true))
             ->whereHas('roles', fn ($q) => $q->whereIn('rol.id', $rolIds))
             ->exists();
     }
@@ -173,7 +173,7 @@ class User extends Authenticatable
         $accionesPorModulo = $acciones->groupBy('modulo_id');
 
         // Todos los modulos activos, agrupados por su padre (0 = raiz del menu).
-        $porPadre = Modulo::where('est', true)
+        $porPadre = Modulo::where('activo', true)
             ->orderBy('orden')->orderBy('id')->get()
             ->groupBy(fn (Modulo $m) => (int) ($m->padre_id ?? 0));
 

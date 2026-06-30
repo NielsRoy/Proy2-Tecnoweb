@@ -24,7 +24,7 @@ return new class extends Migration
             $table->string('descripcion');        // texto legible en espanol
             $table->string('ip', 45)->nullable(); // 45 = cabe una IPv6
             $table->string('user_agent')->nullable();
-            $table->timestamps();                 // created_at = cuando ocurrio
+            $table->timestamp('created_at')->nullable(); // append-only: solo created_at (cuando ocurrio)
 
             $table->index('accion');
             $table->index('modulo');

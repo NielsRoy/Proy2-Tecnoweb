@@ -11,6 +11,8 @@ use App\Models\User;
 use App\Models\Venta;
 use App\Services\RegistrarVenta;
 use App\Support\PlanPago;
+use App\Support\Reporte;
+use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -38,10 +40,9 @@ class VentaController extends Controller
 
     public function index(Request $request): Response
     {
-        $ventas = Venta::with('cliente:id,name')
-            ->withCount('detalles')
-            ->orderByDesc('fecha_venta')
-            ->orderByDesc('id')
+        [$filtros, $query] = $this->consultaFiltrada($request);
+
+        $ventas = $query
             ->paginate(20)
             ->withQueryString()
             ->through(fn (Venta $v) => [
@@ -57,9 +58,110 @@ class VentaController extends Controller
 
         return Inertia::render('ventas/Index', [
             'ventas' => $ventas,
+            'filtros' => $filtros,
+            'clientes' => User::conRolVigente('Cliente')->orderBy('name')->get(['id', 'name']),
             'puedeCrear' => $request->user()->tienePermiso('ventas', 'registrar'),
             'puedeEliminar' => $request->user()->tienePermiso('ventas', 'eliminar'),
         ]);
+    }
+
+    /**
+     * Genera el reporte de la lista FILTRADA en PDF o CSV (Excel). Reusa los mismos filtros que el
+     * index. Contenido: una fila por venta + total. Ruta protegida con permiso:ventas,listar.
+     */
+    public function reporte(Request $request): mixed
+    {
+        $formato = $request->string('formato')->toString() === 'pdf' ? 'pdf' : 'csv';
+        [$filtros, $query] = $this->consultaFiltrada($request);
+        $ventas = $query->get();
+
+        $columnas = ['Fecha', 'Cliente', 'Ítems', 'Total (Bs)', 'Tipo de pago', 'Estado de pago', 'Estado'];
+        $filas = $ventas->map(fn (Venta $v) => [
+            $v->fecha_venta?->format('d/m/Y'),
+            $v->cliente?->name,
+            $v->detalles_count,
+            number_format((float) $v->monto_total, 2, '.', ''),
+            ucfirst($v->tipo_pago),
+            $v->estado_pago === Venta::PAGO_PAGADA ? 'Pagada' : 'Pendiente',
+            $v->estado === Venta::ESTADO_ANULADA ? 'Anulada' : 'Registrada',
+        ])->all();
+        $sumaTotal = number_format((float) $ventas->sum('monto_total'), 2, '.', '');
+        $filaTotal = ['TOTAL', '', '', $sumaTotal, '', '', ''];
+        $nombre = 'ventas_'.now()->format('Ymd_His');
+
+        if ($formato === 'pdf') {
+            return Reporte::pdf([
+                'titulo' => 'Reporte de Ventas',
+                'subtitulo' => $this->descripcionFiltros($filtros),
+                'columnas' => $columnas,
+                'filas' => $filas,
+                'filaTotal' => $filaTotal,
+            ], "{$nombre}.pdf");
+        }
+
+        // CSV: agregar la fila de TOTAL al final (alineada a la columna de monto).
+        $filas[] = $filaTotal;
+
+        return Reporte::csv($columnas, $filas, "{$nombre}.csv");
+    }
+
+    /**
+     * Construye la consulta de ventas aplicando los filtros del request
+     * (cliente/tipo_pago/estado_pago/estado/fechas). La comparten index() y reporte().
+     *
+     * @return array{0: array<string, mixed>, 1: Builder}
+     */
+    private function consultaFiltrada(Request $request): array
+    {
+        $filtros = [
+            'cliente_id' => $request->integer('cliente_id') ?: null,
+            'tipo_pago' => $request->string('tipo_pago')->toString() ?: null,
+            'estado_pago' => $request->string('estado_pago')->toString() ?: null,
+            'estado' => $request->string('estado')->toString() ?: null,
+            'desde' => $request->date('desde')?->toDateString(),
+            'hasta' => $request->date('hasta')?->toDateString(),
+        ];
+
+        $query = Venta::query()
+            ->with('cliente:id,name')
+            ->withCount('detalles')
+            ->when($filtros['cliente_id'], fn ($q, $id) => $q->where('cliente_id', $id))
+            ->when($filtros['tipo_pago'], fn ($q, $t) => $q->where('tipo_pago', $t))
+            ->when($filtros['estado_pago'], fn ($q, $e) => $q->where('estado_pago', $e))
+            ->when($filtros['estado'], fn ($q, $e) => $q->where('estado', $e))
+            ->when($filtros['desde'], fn ($q, $d) => $q->whereDate('fecha_venta', '>=', $d))
+            ->when($filtros['hasta'], fn ($q, $h) => $q->whereDate('fecha_venta', '<=', $h))
+            ->orderByDesc('fecha_venta')
+            ->orderByDesc('id');
+
+        return [$filtros, $query];
+    }
+
+    /** Texto legible de los filtros aplicados (para el subtitulo del reporte). */
+    private function descripcionFiltros(array $f): string
+    {
+        $partes = [];
+        if ($f['cliente_id']) {
+            $partes[] = 'Cliente: '.(User::find($f['cliente_id'])?->name ?? $f['cliente_id']);
+        }
+        if ($f['tipo_pago']) {
+            $partes[] = 'Tipo de pago: '.ucfirst($f['tipo_pago']);
+        }
+        if ($f['estado_pago']) {
+            $partes[] = 'Estado de pago: '.ucfirst($f['estado_pago']);
+        }
+        if ($f['estado']) {
+            $partes[] = 'Estado: '.ucfirst($f['estado']);
+        }
+        if ($f['desde']) {
+            $partes[] = 'Desde: '.$f['desde'];
+        }
+        if ($f['hasta']) {
+            $partes[] = 'Hasta: '.$f['hasta'];
+        }
+        $txt = $partes ? implode(' · ', $partes) : 'Sin filtros (todas las ventas)';
+
+        return $txt.' — Generado: '.now()->format('d/m/Y H:i');
     }
 
     public function create(): Response
@@ -67,7 +169,7 @@ class VentaController extends Controller
         // Una sola promo vigente por producto (la regla de no solapamiento lo garantiza).
         $promosVigentes = Promocion::vigente()->get()->keyBy('producto_id');
 
-        $productos = Producto::where('est', true)->orderBy('nombre')->get()
+        $productos = Producto::where('activo', true)->orderBy('nombre')->get()
             ->map(function (Producto $p) use ($promosVigentes) {
                 $promo = $promosVigentes->get($p->id);
 
@@ -215,7 +317,7 @@ class VentaController extends Controller
             'lineas' => ['required', 'array', 'min:1'],
             'lineas.*.producto_id' => [
                 'required', 'integer', 'distinct',
-                Rule::exists('producto', 'id')->where('est', true),
+                Rule::exists('producto', 'id')->where('activo', true),
             ],
             'lineas.*.cantidad' => ['required', 'integer', 'min:1', 'max:1000000'],
         ], [

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { reactive, ref } from 'vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -12,7 +12,9 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { create, destroy, index, show } from '@/routes/compras';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { create, destroy, index, reporte, show } from '@/routes/compras';
 
 type CompraItem = {
     id: number;
@@ -34,8 +36,17 @@ type Paginado = {
     next_page_url: string | null;
 };
 
-defineProps<{
+type Filtros = {
+    proveedor_id: number | null;
+    estado: string | null;
+    desde: string | null;
+    hasta: string | null;
+};
+
+const props = defineProps<{
     compras: Paginado;
+    filtros: Filtros;
+    proveedores: { id: number; name: string }[];
     puedeCrear: boolean;
     puedeEliminar: boolean;
 }>();
@@ -46,11 +57,57 @@ defineOptions({
     },
 });
 
+const filtros = reactive({
+    proveedor_id:
+        props.filtros.proveedor_id != null
+            ? String(props.filtros.proveedor_id)
+            : '',
+    estado: props.filtros.estado ?? '',
+    desde: props.filtros.desde ?? '',
+    hasta: props.filtros.hasta ?? '',
+});
+
+function queryFiltros(): Record<string, string> {
+    const query: Record<string, string> = {};
+    Object.entries(filtros).forEach(([clave, valor]) => {
+        if (valor !== '' && valor != null) {
+            query[clave] = String(valor);
+        }
+    });
+    return query;
+}
+
+function aplicar(): void {
+    router.get(index().url, queryFiltros(), {
+        preserveScroll: true,
+        preserveState: true,
+        replace: true,
+    });
+}
+
+function limpiar(): void {
+    filtros.proveedor_id = '';
+    filtros.estado = '';
+    filtros.desde = '';
+    filtros.hasta = '';
+    router.get(index().url, {}, { preserveScroll: true, replace: true });
+}
+
+// Descarga del reporte (PDF/CSV) con los filtros actuales. Es una descarga, no Inertia.
+function exportar(formato: 'pdf' | 'csv'): void {
+    const q = new URLSearchParams(queryFiltros());
+    q.set('formato', formato);
+    window.open(`${reporte().url}?${q.toString()}`, '_blank');
+}
+
 function irA(url: string | null): void {
     if (url) {
         router.get(url, {}, { preserveScroll: true, preserveState: true });
     }
 }
+
+const selectClass =
+    'flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm dark:bg-input/30';
 
 const compraAAnular = ref<CompraItem | null>(null);
 const anulando = ref(false);
@@ -86,6 +143,59 @@ function confirmarAnular(): void {
                 <Link :href="create()">Nueva compra</Link>
             </Button>
         </header>
+
+        <!-- Filtros -->
+        <div
+            class="grid gap-3 rounded-xl border border-sidebar-border/70 p-3 sm:grid-cols-2 lg:grid-cols-4 dark:border-sidebar-border"
+        >
+            <div class="grid gap-1.5">
+                <Label for="f-proveedor">Proveedor</Label>
+                <select
+                    id="f-proveedor"
+                    v-model="filtros.proveedor_id"
+                    :class="selectClass"
+                >
+                    <option value="">Todos</option>
+                    <option
+                        v-for="p in proveedores"
+                        :key="p.id"
+                        :value="String(p.id)"
+                    >
+                        {{ p.name }}
+                    </option>
+                </select>
+            </div>
+            <div class="grid gap-1.5">
+                <Label for="f-estado">Estado</Label>
+                <select id="f-estado" v-model="filtros.estado" :class="selectClass">
+                    <option value="">Todos</option>
+                    <option value="registrada">Registrada</option>
+                    <option value="anulada">Anulada</option>
+                </select>
+            </div>
+            <div class="grid gap-1.5">
+                <Label for="f-desde">Desde</Label>
+                <Input id="f-desde" type="date" v-model="filtros.desde" />
+            </div>
+            <div class="grid gap-1.5">
+                <Label for="f-hasta">Hasta</Label>
+                <Input id="f-hasta" type="date" v-model="filtros.hasta" />
+            </div>
+            <div
+                class="flex flex-wrap items-end gap-2 sm:col-span-2 lg:col-span-4"
+            >
+                <Button @click="aplicar">Filtrar</Button>
+                <Button variant="outline" @click="limpiar">Limpiar</Button>
+                <div class="ml-auto flex gap-2">
+                    <Button variant="outline" @click="exportar('pdf')">
+                        Exportar PDF
+                    </Button>
+                    <Button variant="outline" @click="exportar('csv')">
+                        Exportar Excel
+                    </Button>
+                </div>
+            </div>
+        </div>
 
         <div
             class="overflow-x-auto rounded-xl border border-sidebar-border/70 dark:border-sidebar-border"
@@ -149,7 +259,7 @@ function confirmarAnular(): void {
                             colspan="6"
                             class="p-6 text-center text-muted-foreground"
                         >
-                            No hay compras registradas.
+                            No hay compras que coincidan con los filtros.
                         </td>
                     </tr>
                 </tbody>

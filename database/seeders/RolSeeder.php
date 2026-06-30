@@ -22,7 +22,7 @@ class RolSeeder extends Seeder
             // updateOrCreate -> el seeder es idempotente (se puede re-ejecutar sin duplicar).
             Rol::updateOrCreate(['nombre' => $r['nombre']], [
                 'descripcion' => $r['descripcion'],
-                'est' => true,
+                'activo' => true,
             ]);
         }
     }

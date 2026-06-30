@@ -17,9 +17,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $stock
  * @property string|null $foto
  * @property int|null $categoria_id
- * @property bool $est
+ * @property bool $activo
  */
-#[Fillable(['nombre', 'descripcion', 'precio', 'stock', 'foto', 'categoria_id', 'est'])]
+#[Fillable(['nombre', 'descripcion', 'precio', 'stock', 'foto', 'categoria_id', 'activo'])]
 class Producto extends Model
 {
     protected $table = 'producto';
@@ -29,7 +29,7 @@ class Producto extends Model
         return [
             'precio' => 'decimal:2',
             'stock' => 'integer',
-            'est' => 'boolean',
+            'activo' => 'boolean',
         ];
     }
 

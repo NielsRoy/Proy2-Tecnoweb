@@ -14,14 +14,14 @@ use Inertia\Response;
  * CRUD de categorias (modulo "categorias"). Cada categoria agrupa productos y su `foto` sirve de
  * banner en la tienda; `orden` controla la secuencia de aparicion (no hay subcategorias). La foto se
  * guarda en el disco publico (storage/app/public, servido en /storage via `php artisan storage:link`).
- * Eliminar es BAJA LOGICA (est=false) porque los productos la referencian (FK nullOnDelete). Rutas
+ * Eliminar es BAJA LOGICA (activo=false) porque los productos la referencian (FK nullOnDelete). Rutas
  * protegidas con permiso:categorias,<accion>.
  */
 class CategoriaController extends Controller
 {
     public function index(Request $request): Response
     {
-        $categorias = Categoria::where('est', true)
+        $categorias = Categoria::where('activo', true)
             ->orderBy('orden')
             ->orderBy('nombre')
             ->get()
@@ -57,7 +57,7 @@ class CategoriaController extends Controller
             'foto' => $request->hasFile('foto')
                 ? $request->file('foto')->store('categorias', 'public')
                 : null,
-            'est' => true,
+            'activo' => true,
         ]);
 
         Bitacora::registrar('crear', "Creó la categoría {$categoria->nombre}", 'categorias');
@@ -106,7 +106,7 @@ class CategoriaController extends Controller
     public function destroy(Categoria $categoria): RedirectResponse
     {
         // Baja logica (no se borra: los productos la referencian).
-        $categoria->update(['est' => false]);
+        $categoria->update(['activo' => false]);
 
         Bitacora::registrar('eliminar', "Dio de baja la categoría {$categoria->nombre}", 'categorias');
         $this->toastExito('Categoría eliminada.');

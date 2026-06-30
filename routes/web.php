@@ -91,6 +91,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->middleware('permiso:compras,registrar')->name('create');
         Route::post('/', [CompraController::class, 'store'])
             ->middleware('permiso:compras,registrar')->name('store');
+        // Reporte (PDF/CSV) de la lista filtrada. ANTES del comodin {compra} para que no lo capture.
+        Route::get('reporte', [CompraController::class, 'reporte'])
+            ->middleware('permiso:compras,listar')->name('reporte');
         Route::get('{compra}', [CompraController::class, 'show'])
             ->middleware('permiso:compras,listar')->name('show');
         Route::delete('{compra}', [CompraController::class, 'destroy'])
@@ -133,6 +136,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->middleware('permiso:ventas,registrar')->name('create');
         Route::post('/', [VentaController::class, 'store'])
             ->middleware('permiso:ventas,registrar')->name('store');
+        // Reporte (PDF/CSV) de la lista filtrada. ANTES del comodin {venta} para que no lo capture.
+        Route::get('reporte', [VentaController::class, 'reporte'])
+            ->middleware('permiso:ventas,listar')->name('reporte');
         Route::get('{venta}', [VentaController::class, 'show'])
             ->middleware('permiso:ventas,listar')->name('show');
         Route::delete('{venta}', [VentaController::class, 'destroy'])
