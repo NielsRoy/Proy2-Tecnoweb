@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Bitacora;
 use App\Models\Producto;
 use App\Models\Promocion;
+use App\Support\Reporte;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -45,6 +46,43 @@ class PromocionController extends Controller
             'puedeEditar' => $request->user()->tienePermiso('promociones', 'modificar'),
             'puedeEliminar' => $request->user()->tienePermiso('promociones', 'eliminar'),
         ]);
+    }
+
+    /** Reporte (PDF/Excel/CSV) de las promociones activas. Ruta con permiso:promociones,listar. */
+    public function reporte(Request $request): mixed
+    {
+        $hoy = today()->toDateString();
+
+        $promociones = Promocion::with('producto:id,nombre')
+            ->where('activo', true)
+            ->orderByDesc('fecha_inicio')
+            ->get();
+
+        $columnas = ['Producto', 'Promoción', 'Tipo', 'Valor', 'Desde', 'Hasta', 'Vigente'];
+        $filas = $promociones->map(function (Promocion $p) use ($hoy) {
+            $vigente = $p->fecha_inicio?->toDateString() <= $hoy && $p->fecha_fin?->toDateString() >= $hoy;
+            $valor = $p->tipo_descuento === Promocion::TIPO_PORCENTAJE
+                ? rtrim(rtrim((string) $p->valor, '0'), '.').' %'
+                : 'Bs '.number_format((float) $p->valor, 2, '.', '');
+
+            return [
+                $p->producto?->nombre,
+                $p->nombre,
+                ucfirst($p->tipo_descuento),
+                $valor,
+                $p->fecha_inicio?->format('d/m/Y'),
+                $p->fecha_fin?->format('d/m/Y'),
+                $vigente ? 'Sí' : 'No',
+            ];
+        })->all();
+
+        return Reporte::generar($request->string('formato')->toString(), [
+            'titulo' => 'Reporte de Promociones',
+            'subtitulo' => 'Promociones activas — Generado: '.now()->format('d/m/Y H:i'),
+            'columnas' => $columnas,
+            'filas' => $filas,
+            'filaTotal' => ['Total: '.$promociones->count().' promociones', '', '', '', '', '', ''],
+        ], 'promociones');
     }
 
     public function create(): Response

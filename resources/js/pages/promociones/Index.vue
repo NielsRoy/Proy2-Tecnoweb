@@ -12,7 +12,8 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { create, destroy, edit, index } from '@/routes/promociones';
+import BotonesReporte from '@/components/BotonesReporte.vue';
+import { create, destroy, edit, index, reporte } from '@/routes/promociones';
 
 type PromocionItem = {
     id: number;
@@ -64,7 +65,7 @@ function descuento(p: PromocionItem): string {
     <Head title="Promociones" />
 
     <div class="flex h-full flex-1 flex-col gap-4 p-4">
-        <header class="flex items-start justify-between gap-4">
+        <header class="flex flex-wrap items-start justify-between gap-4">
             <div class="space-y-1">
                 <h1 class="text-xl font-semibold">Promociones</h1>
                 <p class="text-sm text-muted-foreground">
@@ -72,9 +73,12 @@ function descuento(p: PromocionItem): string {
                     activas del mismo producto.
                 </p>
             </div>
-            <Button v-if="puedeCrear" as-child>
-                <Link :href="create()">Nueva promoción</Link>
-            </Button>
+            <div class="flex flex-wrap items-center gap-2">
+                <BotonesReporte :url="reporte().url" />
+                <Button v-if="puedeCrear" as-child>
+                    <Link :href="create()">Nueva promoción</Link>
+                </Button>
+            </div>
         </header>
 
         <div

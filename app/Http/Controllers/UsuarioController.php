@@ -7,6 +7,7 @@ use App\Concerns\ProfileValidationRules;
 use App\Models\Bitacora;
 use App\Models\Rol;
 use App\Models\User;
+use App\Support\Reporte;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -55,6 +56,30 @@ class UsuarioController extends Controller
             // Para no permitir que un usuario se elimine a si mismo desde la lista.
             'usuarioActualId' => $request->user()->id,
         ]);
+    }
+
+    /** Reporte (PDF/Excel/CSV) de los usuarios con su(s) rol(es) vigente(s). permiso:usuarios,listar. */
+    public function reporte(Request $request): mixed
+    {
+        $usuarios = User::query()
+            ->with(['roles' => fn ($q) => $q->wherePivot('activo', true)])
+            ->orderBy('name')
+            ->get();
+
+        $columnas = ['Nombre', 'Correo electrónico', 'Rol(es)'];
+        $filas = $usuarios->map(fn (User $u) => [
+            $u->name,
+            $u->email,
+            $u->roles->pluck('nombre')->implode(', ') ?: '—',
+        ])->all();
+
+        return Reporte::generar($request->string('formato')->toString(), [
+            'titulo' => 'Reporte de Usuarios',
+            'subtitulo' => 'Usuarios del sistema — Generado: '.now()->format('d/m/Y H:i'),
+            'columnas' => $columnas,
+            'filas' => $filas,
+            'filaTotal' => ['Total: '.$usuarios->count().' usuarios', '', ''],
+        ], 'usuarios');
     }
 
     /** Formulario de alta. */

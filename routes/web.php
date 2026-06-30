@@ -42,6 +42,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->middleware('permiso:usuarios,registrar')->name('create');
         Route::post('/', [UsuarioController::class, 'store'])
             ->middleware('permiso:usuarios,registrar')->name('store');
+        Route::get('reporte', [UsuarioController::class, 'reporte'])
+            ->middleware('permiso:usuarios,listar')->name('reporte');
         Route::get('{usuario}/editar', [UsuarioController::class, 'edit'])
             ->middleware('permiso:usuarios,modificar')->name('edit');
         Route::put('{usuario}', [UsuarioController::class, 'update'])
@@ -58,6 +60,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->middleware('permiso:productos,registrar')->name('create');
         Route::post('/', [ProductoController::class, 'store'])
             ->middleware('permiso:productos,registrar')->name('store');
+        Route::get('reporte', [ProductoController::class, 'reporte'])
+            ->middleware('permiso:productos,listar')->name('reporte');
         Route::get('{producto}/editar', [ProductoController::class, 'edit'])
             ->middleware('permiso:productos,modificar')->name('edit');
         Route::put('{producto}', [ProductoController::class, 'update'])
@@ -109,6 +113,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->middleware('permiso:inventarios,registrar')->name('create');
         Route::post('/', [InventarioController::class, 'store'])
             ->middleware('permiso:inventarios,registrar')->name('store');
+        Route::get('reporte', [InventarioController::class, 'reporte'])
+            ->middleware('permiso:inventarios,listar')->name('reporte');
     });
 
     // CU6 Promociones (modulo "promociones"): CRUD por producto. Eliminar = baja logica.
@@ -119,6 +125,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->middleware('permiso:promociones,registrar')->name('create');
         Route::post('/', [PromocionController::class, 'store'])
             ->middleware('permiso:promociones,registrar')->name('store');
+        Route::get('reporte', [PromocionController::class, 'reporte'])
+            ->middleware('permiso:promociones,listar')->name('reporte');
         Route::get('{promocion}/editar', [PromocionController::class, 'edit'])
             ->middleware('permiso:promociones,modificar')->name('edit');
         Route::put('{promocion}', [PromocionController::class, 'update'])
@@ -155,6 +163,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('bitacora', [BitacoraController::class, 'index'])
         ->middleware('permiso:bitacora,listar')
         ->name('bitacora.index');
+    Route::get('bitacora/reporte', [BitacoraController::class, 'reporte'])
+        ->middleware('permiso:bitacora,listar')
+        ->name('bitacora.reporte');
 
     // Matriz de Acceso (solo quien tenga el permiso del modulo "acceso").
     Route::get('acceso/matriz', [AccesoController::class, 'matriz'])

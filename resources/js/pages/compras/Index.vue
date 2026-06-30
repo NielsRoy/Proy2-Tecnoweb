@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import BotonesReporte from '@/components/BotonesReporte.vue';
 import { create, destroy, index, reporte, show } from '@/routes/compras';
 
 type CompraItem = {
@@ -91,13 +92,6 @@ function limpiar(): void {
     filtros.desde = '';
     filtros.hasta = '';
     router.get(index().url, {}, { preserveScroll: true, replace: true });
-}
-
-// Descarga del reporte (PDF/CSV) con los filtros actuales. Es una descarga, no Inertia.
-function exportar(formato: 'pdf' | 'csv'): void {
-    const q = new URLSearchParams(queryFiltros());
-    q.set('formato', formato);
-    window.open(`${reporte().url}?${q.toString()}`, '_blank');
 }
 
 function irA(url: string | null): void {
@@ -186,14 +180,11 @@ function confirmarAnular(): void {
             >
                 <Button @click="aplicar">Filtrar</Button>
                 <Button variant="outline" @click="limpiar">Limpiar</Button>
-                <div class="ml-auto flex gap-2">
-                    <Button variant="outline" @click="exportar('pdf')">
-                        Exportar PDF
-                    </Button>
-                    <Button variant="outline" @click="exportar('csv')">
-                        Exportar Excel
-                    </Button>
-                </div>
+                <BotonesReporte
+                    class="ml-auto"
+                    :url="reporte().url"
+                    :query="queryFiltros()"
+                />
             </div>
         </div>
 

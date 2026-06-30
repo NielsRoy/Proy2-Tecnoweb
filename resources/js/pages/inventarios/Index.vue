@@ -5,7 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { create, index } from '@/routes/inventarios';
+import BotonesReporte from '@/components/BotonesReporte.vue';
+import { create, index, reporte } from '@/routes/inventarios';
 
 type MovimientoItem = {
     id: number;
@@ -57,14 +58,18 @@ const filtros = reactive({
     hasta: props.filtros.hasta ?? '',
 });
 
-function aplicar(): void {
+function queryFiltros(): Record<string, string> {
     const query: Record<string, string> = {};
     Object.entries(filtros).forEach(([clave, valor]) => {
         if (valor !== '' && valor != null) {
             query[clave] = String(valor);
         }
     });
-    router.get(index().url, query, {
+    return query;
+}
+
+function aplicar(): void {
+    router.get(index().url, queryFiltros(), {
         preserveScroll: true,
         preserveState: true,
         replace: true,
@@ -160,9 +165,16 @@ const selectClass =
                 <Label for="f-hasta">Hasta</Label>
                 <Input id="f-hasta" type="date" v-model="filtros.hasta" />
             </div>
-            <div class="flex items-end gap-2 sm:col-span-2 lg:col-span-5">
+            <div
+                class="flex flex-wrap items-end gap-2 sm:col-span-2 lg:col-span-5"
+            >
                 <Button @click="aplicar">Filtrar</Button>
                 <Button variant="outline" @click="limpiar">Limpiar</Button>
+                <BotonesReporte
+                    class="ml-auto"
+                    :url="reporte().url"
+                    :query="queryFiltros()"
+                />
             </div>
         </div>
 

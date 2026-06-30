@@ -12,7 +12,8 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { create, destroy, edit, index } from '@/routes/productos';
+import BotonesReporte from '@/components/BotonesReporte.vue';
+import { create, destroy, edit, index, reporte } from '@/routes/productos';
 
 type ProductoItem = {
     id: number;
@@ -58,7 +59,7 @@ function confirmarEliminar(): void {
     <Head title="Productos" />
 
     <div class="flex h-full flex-1 flex-col gap-4 p-4">
-        <header class="flex items-start justify-between gap-4">
+        <header class="flex flex-wrap items-start justify-between gap-4">
             <div class="space-y-1">
                 <h1 class="text-xl font-semibold">Productos</h1>
                 <p class="text-sm text-muted-foreground">
@@ -66,9 +67,12 @@ function confirmarEliminar(): void {
                     e inventario (no se edita aquí).
                 </p>
             </div>
-            <Button v-if="puedeCrear" as-child>
-                <Link :href="create()">Nuevo producto</Link>
-            </Button>
+            <div class="flex flex-wrap items-center gap-2">
+                <BotonesReporte :url="reporte().url" />
+                <Button v-if="puedeCrear" as-child>
+                    <Link :href="create()">Nuevo producto</Link>
+                </Button>
+            </div>
         </header>
 
         <div

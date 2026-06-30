@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Bitacora;
 use App\Models\Categoria;
 use App\Models\Producto;
+use App\Support\Reporte;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -41,6 +42,31 @@ class ProductoController extends Controller
             'puedeEditar' => $request->user()->tienePermiso('productos', 'modificar'),
             'puedeEliminar' => $request->user()->tienePermiso('productos', 'eliminar'),
         ]);
+    }
+
+    /** Reporte (PDF/Excel/CSV) del catálogo de productos activos. Ruta con permiso:productos,listar. */
+    public function reporte(Request $request): mixed
+    {
+        $productos = Producto::where('activo', true)
+            ->with('categoria:id,nombre')
+            ->orderBy('nombre')
+            ->get();
+
+        $columnas = ['Nombre', 'Categoría', 'Precio (Bs)', 'Stock'];
+        $filas = $productos->map(fn (Producto $p) => [
+            $p->nombre,
+            $p->categoria?->nombre ?? 'Sin categoría',
+            number_format((float) $p->precio, 2, '.', ''),
+            $p->stock,
+        ])->all();
+
+        return Reporte::generar($request->string('formato')->toString(), [
+            'titulo' => 'Reporte de Productos',
+            'subtitulo' => 'Catálogo activo — Generado: '.now()->format('d/m/Y H:i'),
+            'columnas' => $columnas,
+            'filas' => $filas,
+            'filaTotal' => ['Total: '.$productos->count().' productos', '', '', $productos->sum('stock')],
+        ], 'productos');
     }
 
     public function create(): Response

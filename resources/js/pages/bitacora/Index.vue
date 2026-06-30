@@ -5,7 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { index } from '@/routes/bitacora';
+import BotonesReporte from '@/components/BotonesReporte.vue';
+import { index, reporte } from '@/routes/bitacora';
 
 type Registro = {
     id: number;
@@ -58,7 +59,7 @@ const filtros = reactive({
     hasta: props.filtros.hasta ?? '',
 });
 
-function aplicar(): void {
+function queryFiltros(): Record<string, string> {
     // Solo enviamos los filtros con valor, para que la URL quede limpia.
     const query: Record<string, string> = {};
     Object.entries(filtros).forEach(([clave, valor]) => {
@@ -66,7 +67,11 @@ function aplicar(): void {
             query[clave] = String(valor);
         }
     });
-    router.get(index().url, query, {
+    return query;
+}
+
+function aplicar(): void {
+    router.get(index().url, queryFiltros(), {
         preserveScroll: true,
         preserveState: true,
         replace: true,
@@ -156,9 +161,16 @@ const selectClass =
                     @keyup.enter="aplicar"
                 />
             </div>
-            <div class="flex items-end gap-2 sm:col-span-2 lg:col-span-5">
+            <div
+                class="flex flex-wrap items-end gap-2 sm:col-span-2 lg:col-span-5"
+            >
                 <Button @click="aplicar">Filtrar</Button>
                 <Button variant="outline" @click="limpiar">Limpiar</Button>
+                <BotonesReporte
+                    class="ml-auto"
+                    :url="reporte().url"
+                    :query="queryFiltros()"
+                />
             </div>
         </div>
 

@@ -71,7 +71,6 @@ class VentaController extends Controller
      */
     public function reporte(Request $request): mixed
     {
-        $formato = $request->string('formato')->toString() === 'pdf' ? 'pdf' : 'csv';
         [$filtros, $query] = $this->consultaFiltrada($request);
         $ventas = $query->get();
 
@@ -86,23 +85,14 @@ class VentaController extends Controller
             $v->estado === Venta::ESTADO_ANULADA ? 'Anulada' : 'Registrada',
         ])->all();
         $sumaTotal = number_format((float) $ventas->sum('monto_total'), 2, '.', '');
-        $filaTotal = ['TOTAL', '', '', $sumaTotal, '', '', ''];
-        $nombre = 'ventas_'.now()->format('Ymd_His');
 
-        if ($formato === 'pdf') {
-            return Reporte::pdf([
-                'titulo' => 'Reporte de Ventas',
-                'subtitulo' => $this->descripcionFiltros($filtros),
-                'columnas' => $columnas,
-                'filas' => $filas,
-                'filaTotal' => $filaTotal,
-            ], "{$nombre}.pdf");
-        }
-
-        // CSV: agregar la fila de TOTAL al final (alineada a la columna de monto).
-        $filas[] = $filaTotal;
-
-        return Reporte::csv($columnas, $filas, "{$nombre}.csv");
+        return Reporte::generar($request->string('formato')->toString(), [
+            'titulo' => 'Reporte de Ventas',
+            'subtitulo' => $this->descripcionFiltros($filtros),
+            'columnas' => $columnas,
+            'filas' => $filas,
+            'filaTotal' => ['TOTAL', '', '', $sumaTotal, '', '', ''],
+        ], 'ventas');
     }
 
     /**
