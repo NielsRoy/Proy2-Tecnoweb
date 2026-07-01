@@ -6,6 +6,7 @@ use App\Models\Bitacora;
 use App\Models\Pago;
 use App\Models\User;
 use App\Models\Venta;
+use App\Support\Url;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -48,8 +49,9 @@ class PagoController extends Controller
             'monto' => $p->monto,
             'fecha_vencimiento' => $p->fecha_vencimiento?->toDateString(),
             'es_proxima' => $p->numero_cuota === $minPorVenta->get($p->venta_id),
-            // URL del flujo de pago por QR (respeta el subdirectorio); al confirmar vuelve a este index.
-            'qr_url' => route('pagos.qr', ['pago' => $p->id, 'retorno' => 'pagos.index'], absolute: false),
+            // URL del flujo de pago por QR (Url::path conserva el subdirectorio en produccion);
+            // al confirmar el pago vuelve a este index.
+            'qr_url' => Url::path('pagos.qr', ['pago' => $p->id, 'retorno' => 'pagos.index']),
         ])->values();
 
         return Inertia::render('pagos/Index', [

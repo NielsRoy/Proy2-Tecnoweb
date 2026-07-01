@@ -16,23 +16,26 @@ class Url
      * en local (APP_URL sin path) sale "/productos". Pensado para rutas SIN parametros
      * (modulos/acciones del menu dinamico).
      *
+     * Acepta parametros de ruta (modelo/array) igual que route(); ej.
+     * Url::path('pagos.qr', ['pago' => 5, 'retorno' => 'inicio']) -> ".../qr/5?retorno=inicio".
+     *
      * ⚠️ SOLO para hrefs que consume el navegador / Inertia <Link> (client-side), donde un path
      * root-relative se resuelve contra el origen y por eso necesita el subpath. NO usar en un
      * `redirect()`/`url()->to()` server-side: esos YA anteponen la raiz de la peticion (con el
      * subdirectorio) y el subpath saldria DUPLICADO. Para redirects usa `route($name, absolute: false)`.
      */
-    public static function path(string $name): string
+    public static function path(string $name, mixed $parameters = []): string
     {
         $base = rtrim(parse_url((string) config('app.url'), PHP_URL_PATH) ?? '', '/');
 
-        return $base.route($name, absolute: false);
+        return $base.route($name, $parameters, absolute: false);
     }
 
     /**
      * Igual que path() pero seguro: null si la ruta con nombre no existe (CU sin construir).
      */
-    public static function pathSiExiste(?string $name): ?string
+    public static function pathSiExiste(?string $name, mixed $parameters = []): ?string
     {
-        return $name && Route::has($name) ? self::path($name) : null;
+        return $name && Route::has($name) ? self::path($name, $parameters) : null;
     }
 }

@@ -6,6 +6,7 @@ use App\Models\Bitacora;
 use App\Models\Pago;
 use App\Models\Venta;
 use App\Services\PagoFacil\PagoFacilClient;
+use App\Support\Url;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -45,9 +46,9 @@ class PagoQrController extends Controller
                 'monto' => $pago->monto,
             ],
             'retornoUrl' => $this->retornoUrl($request),
-            // URLs resueltas en el server (respetan el subdirectorio) para el polling AJAX del cliente.
-            'generarUrl' => route('pagos.qr.generar', $pago, absolute: false),
-            'estadoUrl' => route('pagos.qr.estado', $pago, absolute: false),
+            // URLs resueltas en el server (Url::path conserva el subdirectorio) para el polling AJAX.
+            'generarUrl' => Url::path('pagos.qr.generar', $pago),
+            'estadoUrl' => Url::path('pagos.qr.estado', $pago),
             'pollSeconds' => app(PagoFacilClient::class)->pollSeconds(),
             'timeoutSeconds' => app(PagoFacilClient::class)->timeoutSeconds(),
         ]);
@@ -152,12 +153,12 @@ class PagoQrController extends Controller
         $retorno = $request->string('retorno')->toString();
 
         if (in_array($retorno, self::RETORNOS, true)) {
-            return route($retorno, absolute: false);
+            return Url::path($retorno);
         }
 
         // Fallback: admin -> pagos; cliente -> inicio.
         return $request->user()->tienePermiso('pagos', 'registrar')
-            ? route('pagos.index', absolute: false)
-            : route('inicio', absolute: false);
+            ? Url::path('pagos.index')
+            : Url::path('inicio');
     }
 }
