@@ -115,7 +115,9 @@ class RegistrarVenta
                     ]);
                 }
             } else {
-                // Contado: una cuota que se salda ya con el metodo elegido (-> venta 'pagada').
+                // Contado: una unica cuota. Con QR (pago asincrono) NO se salda aqui: nace pendiente y
+                // se cobra en el flujo QR (PagoQrController); con los demas metodos se salda al instante
+                // (-> venta 'pagada').
                 $cuota = Pago::create([
                     'venta_id' => $venta->id,
                     'numero_cuota' => 1,
@@ -123,7 +125,10 @@ class RegistrarVenta
                     'fecha_vencimiento' => $datos['fecha_venta'],
                     'estado' => Pago::ESTADO_PENDIENTE,
                 ]);
-                Pago::saldar($cuota, $datos['metodo']);
+
+                if ($datos['metodo'] !== Pago::METODO_QR) {
+                    Pago::saldar($cuota, $datos['metodo']);
+                }
             }
 
             Bitacora::registrar(

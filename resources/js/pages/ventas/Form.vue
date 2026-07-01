@@ -373,7 +373,7 @@ const selectClass =
                     <Label for="metodo">Método de pago</Label>
                     <select id="metodo" v-model="form.metodo" :class="selectClass">
                         <option v-for="m in metodos" :key="m" :value="m">
-                            {{ m.charAt(0).toUpperCase() + m.slice(1) }}
+                            {{ m === 'qr' ? 'QR' : m.charAt(0).toUpperCase() + m.slice(1) }}
                         </option>
                     </select>
                     <InputError :message="form.errors.metodo" />

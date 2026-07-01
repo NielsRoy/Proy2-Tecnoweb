@@ -9,6 +9,7 @@ use App\Models\Rol;
 use App\Models\User;
 use App\Support\Reporte;
 use Illuminate\Contracts\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -148,6 +149,8 @@ class UsuarioController extends Controller
             $usuario = User::create([
                 'name' => $datos['name'],
                 'email' => $datos['email'],
+                'ci' => $datos['ci'] ?? null,
+                'telefono' => $datos['telefono'] ?? null,
                 'password' => $datos['password'], // el cast 'hashed' del modelo lo hashea
             ]);
             $this->asignarRol($usuario, (int) $datos['rol_id']);
@@ -172,6 +175,8 @@ class UsuarioController extends Controller
                 'id' => $usuario->id,
                 'name' => $usuario->name,
                 'email' => $usuario->email,
+                'ci' => $usuario->ci,
+                'telefono' => $usuario->telefono,
                 'rol_id' => $usuario->roles()->wherePivot('activo', true)->first()?->id,
             ],
             'roles' => $this->rolesParaFormulario($usuario),
@@ -189,6 +194,8 @@ class UsuarioController extends Controller
             $usuario->update([
                 'name' => $datos['name'],
                 'email' => $datos['email'],
+                'ci' => $datos['ci'] ?? null,
+                'telefono' => $datos['telefono'] ?? null,
             ]);
 
             if (! empty($datos['password'])) {
@@ -241,7 +248,7 @@ class UsuarioController extends Controller
      *   activos MENOS Propietario (no se pueden crear más Propietarios).
      * - Editar al propio Propietario → solo su rol (el selector va bloqueado en el front).
      *
-     * @return \Illuminate\Database\Eloquent\Collection<int, \App\Models\Rol>
+     * @return Collection<int, Rol>
      */
     private function rolesParaFormulario(?User $usuario)
     {
@@ -279,6 +286,9 @@ class UsuarioController extends Controller
         $reglas = [
             'name' => $this->nameRules(),
             'email' => $this->emailRules($usuario?->id),
+            // Datos fiscales opcionales (los usa el pago por QR de PagoFacil en modo datos reales).
+            'ci' => ['nullable', 'string', 'max:20'],
+            'telefono' => ['nullable', 'string', 'max:20'],
             'rol_id' => ['required', 'integer', Rule::in($rolesPermitidos)],
             'password' => $usuario === null
                 ? $this->passwordRules()                                  // required + confirmed

@@ -8,8 +8,8 @@ use App\Models\User;
 use App\Models\Venta;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -48,6 +48,8 @@ class PagoController extends Controller
             'monto' => $p->monto,
             'fecha_vencimiento' => $p->fecha_vencimiento?->toDateString(),
             'es_proxima' => $p->numero_cuota === $minPorVenta->get($p->venta_id),
+            // URL del flujo de pago por QR (respeta el subdirectorio); al confirmar vuelve a este index.
+            'qr_url' => route('pagos.qr', ['pago' => $p->id, 'retorno' => 'pagos.index'], absolute: false),
         ])->values();
 
         return Inertia::render('pagos/Index', [

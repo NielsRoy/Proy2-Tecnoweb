@@ -36,7 +36,7 @@ const roles = computed(() => page.props.auth.roles ?? []);
         <Heading
             variant="small"
             title="Perfil"
-            description="Actualiza tu nombre y correo electrónico"
+            description="Actualiza tu nombre, correo electrónico y datos de contacto"
         />
 
         <div class="flex items-center gap-2">
@@ -83,6 +83,34 @@ const roles = computed(() => page.props.auth.roles ?? []);
                     placeholder="Correo electrónico"
                 />
                 <InputError class="mt-2" :message="errors.email" />
+            </div>
+
+            <div class="grid gap-4 sm:grid-cols-2">
+                <div class="grid gap-2">
+                    <Label for="ci">CI / Documento</Label>
+                    <Input
+                        id="ci"
+                        class="mt-1 block w-full"
+                        name="ci"
+                        :default-value="user.ci ?? ''"
+                        autocomplete="off"
+                        placeholder="Documento de identidad"
+                    />
+                    <InputError class="mt-2" :message="errors.ci" />
+                </div>
+
+                <div class="grid gap-2">
+                    <Label for="telefono">Teléfono</Label>
+                    <Input
+                        id="telefono"
+                        class="mt-1 block w-full"
+                        name="telefono"
+                        :default-value="user.telefono ?? ''"
+                        autocomplete="off"
+                        placeholder="Número de contacto"
+                    />
+                    <InputError class="mt-2" :message="errors.telefono" />
+                </div>
             </div>
 
             <div class="flex items-center gap-4">

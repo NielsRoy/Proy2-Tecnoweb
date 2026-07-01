@@ -24,6 +24,7 @@ type CuotaItem = {
     monto: string;
     fecha_vencimiento: string | null;
     es_proxima: boolean;
+    qr_url: string;
 };
 
 const props = defineProps<{
@@ -171,13 +172,21 @@ const selectClass =
                             </Badge>
                         </td>
                         <td v-if="puedeRegistrar" class="p-3 text-right">
-                            <Button
+                            <div
                                 v-if="c.es_proxima"
-                                size="sm"
-                                @click="abrirCobro(c)"
+                                class="flex justify-end gap-2"
                             >
-                                Registrar pago
-                            </Button>
+                                <Button size="sm" @click="abrirCobro(c)">
+                                    Registrar pago
+                                </Button>
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    @click="router.visit(c.qr_url)"
+                                >
+                                    Pagar con QR
+                                </Button>
+                            </div>
                             <span v-else class="text-xs text-muted-foreground">—</span>
                         </td>
                     </tr>

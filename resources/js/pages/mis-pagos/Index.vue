@@ -24,6 +24,7 @@ type CuotaPlan = {
     monto: string;
     fecha_vencimiento: string | null;
     es_proxima: boolean;
+    qr_url: string;
 };
 
 type CuotaHistorial = {
@@ -158,13 +159,21 @@ const selectClass =
                                 </Badge>
                             </td>
                             <td class="p-3 text-right">
-                                <Button
+                                <div
                                     v-if="c.es_proxima"
-                                    size="sm"
-                                    @click="abrirPago(c)"
+                                    class="flex justify-end gap-2"
                                 >
-                                    Pagar
-                                </Button>
+                                    <Button size="sm" @click="abrirPago(c)">
+                                        Pagar
+                                    </Button>
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        @click="router.visit(c.qr_url)"
+                                    >
+                                        Pagar con QR
+                                    </Button>
+                                </div>
                                 <span v-else class="text-xs text-muted-foreground">
                                     —
                                 </span>

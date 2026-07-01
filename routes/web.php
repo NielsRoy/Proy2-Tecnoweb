@@ -9,6 +9,7 @@ use App\Http\Controllers\InventarioController;
 use App\Http\Controllers\MisComprasController;
 use App\Http\Controllers\MisPagosController;
 use App\Http\Controllers\PagoController;
+use App\Http\Controllers\PagoQrController;
 use App\Http\Controllers\ProductoController;
 use App\Http\Controllers\PromocionController;
 use App\Http\Controllers\TiendaController;
@@ -29,6 +30,13 @@ Route::middleware('auth')->group(function () {
     Route::put('carrito/{producto}', [CarritoController::class, 'actualizar'])->name('carrito.actualizar');
     Route::delete('carrito/{producto}', [CarritoController::class, 'quitar'])->name('carrito.quitar');
     Route::post('carrito/checkout', [CarritoController::class, 'checkout'])->name('carrito.checkout');
+
+    // Pago por QR de PagoFacil (requisito #10): flujo asincrono comun a los 4 puntos de pago. Solo
+    // 'auth' (la autorizacion fina -dueño de la venta o admin de pagos- la hace PagoQrController).
+    // generar/estado devuelven JSON (los consume el polling del navegador), no Inertia.
+    Route::get('qr/{pago}', [PagoQrController::class, 'mostrar'])->name('pagos.qr');
+    Route::post('qr/{pago}/generar', [PagoQrController::class, 'generar'])->name('pagos.qr.generar');
+    Route::get('qr/{pago}/estado', [PagoQrController::class, 'estado'])->name('pagos.qr.estado');
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {

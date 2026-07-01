@@ -12,6 +12,8 @@ type UsuarioEdit = {
     id: number;
     name: string;
     email: string;
+    ci: string | null;
+    telefono: string | null;
     rol_id: number | null;
 };
 
@@ -33,6 +35,8 @@ defineOptions({
 const form = useForm({
     name: props.usuario?.name ?? '',
     email: props.usuario?.email ?? '',
+    ci: props.usuario?.ci ?? '',
+    telefono: props.usuario?.telefono ?? '',
     rol_id: props.usuario?.rol_id ?? ('' as number | ''),
     password: '',
     password_confirmation: '',
@@ -97,6 +101,40 @@ function enviar(): void {
                     placeholder="correo@ejemplo.com"
                 />
                 <InputError :message="form.errors.email" />
+            </div>
+
+            <div class="grid gap-4 sm:grid-cols-2">
+                <div class="grid gap-2">
+                    <Label for="ci">
+                        CI / Documento
+                        <span class="font-normal text-muted-foreground">
+                            (opcional)
+                        </span>
+                    </Label>
+                    <Input
+                        id="ci"
+                        v-model="form.ci"
+                        autocomplete="off"
+                        placeholder="Documento de identidad"
+                    />
+                    <InputError :message="form.errors.ci" />
+                </div>
+
+                <div class="grid gap-2">
+                    <Label for="telefono">
+                        Teléfono
+                        <span class="font-normal text-muted-foreground">
+                            (opcional)
+                        </span>
+                    </Label>
+                    <Input
+                        id="telefono"
+                        v-model="form.telefono"
+                        autocomplete="off"
+                        placeholder="Número de contacto"
+                    />
+                    <InputError :message="form.errors.telefono" />
+                </div>
             </div>
 
             <div class="grid gap-2">

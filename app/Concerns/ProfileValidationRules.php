@@ -18,6 +18,9 @@ trait ProfileValidationRules
         return [
             'name' => $this->nameRules(),
             'email' => $this->emailRules($userId),
+            // Datos fiscales opcionales (los usa el pago por QR de PagoFacil en modo datos reales).
+            'ci' => ['nullable', 'string', 'max:20'],
+            'telefono' => ['nullable', 'string', 'max:20'],
         ];
     }
 

@@ -24,7 +24,7 @@ use Inertia\Response;
  */
 class CarritoController extends Controller
 {
-    private const METODOS = [Pago::METODO_EFECTIVO, Pago::METODO_TRANSFERENCIA, Pago::METODO_TARJETA];
+    private const METODOS = [Pago::METODO_EFECTIVO, Pago::METODO_TRANSFERENCIA, Pago::METODO_TARJETA, Pago::METODO_QR];
 
     /** Vista del carrito + formulario de compra. */
     public function index(Request $request): Response
@@ -132,7 +132,7 @@ class CarritoController extends Controller
         }
 
         // RegistrarVenta valida stock/promo/credito/bloqueo y lanza ValidationException si algo falla.
-        $registrar->ejecutar([
+        $venta = $registrar->ejecutar([
             'cliente_id' => $uid,
             'fecha_venta' => today()->toDateString(),
             'direccion_envio' => $datos['direccion_envio'],
@@ -144,8 +144,15 @@ class CarritoController extends Controller
                 ->all(),
         ]);
 
-        // Compra registrada: vaciar el carrito.
+        // Compra registrada: vaciar el carrito (la venta ya existe, aunque el QR quede por pagar).
         Carrito::where('cliente_id', $uid)->delete();
+
+        // Contado por QR: la venta nace pendiente; se cobra en la pagina del QR (con polling).
+        if (($datos['metodo'] ?? null) === Pago::METODO_QR) {
+            $cuota = $venta->pagos()->where('numero_cuota', 1)->firstOrFail();
+
+            return redirect()->route('pagos.qr', ['pago' => $cuota->id, 'retorno' => 'inicio']);
+        }
 
         $this->toastExito('¡Compra realizada con éxito!');
 

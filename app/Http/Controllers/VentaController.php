@@ -15,9 +15,9 @@ use App\Support\Reporte;
 use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
-use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -35,8 +35,8 @@ use Inertia\Response;
  */
 class VentaController extends Controller
 {
-    /** Metodos de pago disponibles por ahora (el QR del requisito #10 queda pendiente). */
-    private const METODOS = [Pago::METODO_EFECTIVO, Pago::METODO_TRANSFERENCIA, Pago::METODO_TARJETA];
+    /** Metodos de pago disponibles (contado). QR (#10) difiere el cobro al flujo asincrono. */
+    private const METODOS = [Pago::METODO_EFECTIVO, Pago::METODO_TRANSFERENCIA, Pago::METODO_TARJETA, Pago::METODO_QR];
 
     public function index(Request $request): Response
     {
@@ -204,7 +204,14 @@ class VentaController extends Controller
 
         // Toda la logica de negocio (lineas/stock/promo/credito/bloqueo/transaccion) vive en el
         // servicio, compartido con la tienda autoservicio.
-        $registrar->ejecutar($datos);
+        $venta = $registrar->ejecutar($datos);
+
+        // Contado por QR: la venta nace pendiente; se cobra en el flujo QR (pagina con QR + polling).
+        if (($datos['metodo'] ?? null) === Pago::METODO_QR) {
+            $cuota = $venta->pagos()->where('numero_cuota', 1)->firstOrFail();
+
+            return redirect()->route('pagos.qr', ['pago' => $cuota->id, 'retorno' => 'ventas.index']);
+        }
 
         $this->toastExito('Venta registrada.');
 
