@@ -27,13 +27,15 @@ class RolAccionSeeder extends Seeder
                 'inventarios' => ['listar', 'reportar'],
                 'promociones' => ['listar', 'reportar'],
                 'pagos' => ['listar', 'registrar'],
+                'mis_compras' => ['ver'],
+                'mis_pagos' => ['ver', 'pagar'],
             ],
             'Cliente' => [
-                'dashboard' => ['ver'],
                 'productos' => ['listar', 'reportar'],
                 'categorias' => ['listar'],
                 'promociones' => ['listar', 'reportar'],
-                'pagos' => ['listar'],
+                'mis_compras' => ['ver'],
+                'mis_pagos' => ['ver', 'pagar'],
             ],
             'Proveedor' => [
                 'dashboard' => ['ver'],
@@ -41,6 +43,8 @@ class RolAccionSeeder extends Seeder
                 'categorias' => ['listar'],
                 'compras' => ['listar', 'registrar', 'reportar'],
                 'inventarios' => ['listar', 'reportar'],
+                'mis_compras' => ['ver'],
+                'mis_pagos' => ['ver', 'pagar'],
             ],
         ];
 

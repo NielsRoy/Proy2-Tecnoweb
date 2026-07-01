@@ -6,6 +6,8 @@ use App\Http\Controllers\CarritoController;
 use App\Http\Controllers\CategoriaController;
 use App\Http\Controllers\CompraController;
 use App\Http\Controllers\InventarioController;
+use App\Http\Controllers\MisComprasController;
+use App\Http\Controllers\MisPagosController;
 use App\Http\Controllers\PagoController;
 use App\Http\Controllers\ProductoController;
 use App\Http\Controllers\PromocionController;
@@ -158,6 +160,22 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->middleware('permiso:pagos,listar')->name('pagos.index');
     Route::put('pagos/{pago}', [PagoController::class, 'pagar'])
         ->middleware('permiso:pagos,registrar')->name('pagos.pagar');
+
+    // Perspectiva CLIENTE (autoservicio): historial de compras y plan/historial de pagos del propio
+    // usuario. Gestionables por la matriz (modulos mis_compras/mis_pagos); el detalle/pago refuerza
+    // con guardia de propiedad (cliente_id = user id).
+    Route::prefix('mis-compras')->name('mis-compras.')->group(function () {
+        Route::get('/', [MisComprasController::class, 'index'])
+            ->middleware('permiso:mis_compras,ver')->name('index');
+        Route::get('{venta}', [MisComprasController::class, 'show'])
+            ->middleware('permiso:mis_compras,ver')->name('show');
+    });
+    Route::prefix('mis-pagos')->name('mis-pagos.')->group(function () {
+        Route::get('/', [MisPagosController::class, 'index'])
+            ->middleware('permiso:mis_pagos,ver')->name('index');
+        Route::put('{pago}', [MisPagosController::class, 'pagar'])
+            ->middleware('permiso:mis_pagos,pagar')->name('pagar');
+    });
 
     // Bitacora (auditoria): vista de solo-lectura del modulo "bitacora".
     Route::get('bitacora', [BitacoraController::class, 'index'])

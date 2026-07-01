@@ -16,7 +16,8 @@ type RolItem = {
     id: number;
     nombre: string;
     descripcion: string | null;
-    editable: boolean;
+    // El Propietario (super) es editable en todo menos el módulo "acceso" (bloqueado por celda).
+    esSuper: boolean;
 };
 
 const props = defineProps<{
@@ -99,12 +100,16 @@ const form = useForm<{ asignaciones: Record<number, number[]> }>({
     asignaciones: {},
 });
 
+// ¿La celda (rol, módulo) está bloqueada? Solo las del módulo "acceso" para el Propietario, que
+// siempre las conserva (anti auto-bloqueo). El resto depende de `puedeEditar`.
+function celdaBloqueada(rol: RolItem, modulo: ModuloItem): boolean {
+    return rol.esSuper && modulo.clave === 'acceso';
+}
+
 function guardar(): void {
     const payload: Record<number, number[]> = {};
     props.roles.forEach((rol) => {
-        if (!rol.editable) {
-            return; // el super-rol (Propietario) no se envia: el servidor lo mantiene completo
-        }
+        // Se envían todos los roles (incluido el Propietario); el servidor le re-fuerza "acceso".
         payload[rol.id] = Array.from(seleccion[rol.id] ?? []);
     });
 
@@ -141,10 +146,10 @@ function guardar(): void {
                         >
                             {{ rol.nombre }}
                             <span
-                                v-if="!rol.editable"
+                                v-if="rol.esSuper"
                                 class="block text-xs font-normal text-muted-foreground"
                             >
-                                (acceso total)
+                                (Control de Acceso fijo)
                             </span>
                         </th>
                     </tr>
@@ -175,7 +180,10 @@ function guardar(): void {
                                 <div class="flex justify-center">
                                     <Checkbox
                                         :model-value="estaMarcado(rol.id, accion.id)"
-                                        :disabled="!puedeEditar || !rol.editable"
+                                        :disabled="
+                                            !puedeEditar ||
+                                            celdaBloqueada(rol, modulo)
+                                        "
                                         @update:model-value="
                                             alternar(rol.id, accion.id, $event)
                                         "

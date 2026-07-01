@@ -46,8 +46,9 @@ class AccesoController extends Controller
                 'id' => $r->id,
                 'nombre' => $r->nombre,
                 'descripcion' => $r->descripcion,
-                // El super-rol se muestra pero con checkboxes bloqueados (siempre tiene todo).
-                'editable' => $r->nombre !== self::ROL_SUPER,
+                // El super-rol (Propietario) ahora es editable en todo MENOS el modulo "acceso"
+                // (Control de Acceso), que se le fuerza siempre para que no pueda auto-bloquearse.
+                'esSuper' => $r->nombre === self::ROL_SUPER,
             ]),
             'modulos' => $modulos->map(fn (Modulo $m) => [
                 'id' => $m->id,
@@ -73,18 +74,19 @@ class AccesoController extends Controller
             'asignaciones.*.*' => ['integer', 'exists:accion,id'],
         ]);
 
-        $todasLasAcciones = Accion::pluck('id')->all();
+        // Acciones del modulo "acceso" (Control de Acceso): SIEMPRE se le fuerzan al Propietario
+        // (nunca puede perder el control de la matriz -> anti auto-bloqueo).
+        $accesoIds = Accion::whereHas('modulo', fn ($q) => $q->where('clave', 'acceso'))->pluck('id')->all();
 
         foreach (Rol::where('activo', true)->get() as $rol) {
-            // El super-rol siempre conserva todo, ignorando lo que llegue (anti auto-bloqueo).
-            if ($rol->nombre === self::ROL_SUPER) {
-                $rol->acciones()->sync($todasLasAcciones);
-
-                continue;
-            }
-
             $accionIds = $datos['asignaciones'][$rol->id] ?? [];
             $accionIds = $this->normalizarDependencias($accionIds);
+
+            // El Propietario puede togglear todo menos Control de Acceso: se le re-inyecta siempre.
+            if ($rol->nombre === self::ROL_SUPER) {
+                $accionIds = array_values(array_unique(array_merge($accionIds, $accesoIds)));
+            }
+
             $rol->acciones()->sync($accionIds);          // reemplaza la fila completa del rol
         }
 

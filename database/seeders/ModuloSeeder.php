@@ -41,6 +41,10 @@ class ModuloSeeder extends Seeder
             ['clave' => 'reportes', 'nombre' => 'Reportes', 'icono' => 'ChartColumn', 'ruta' => 'reportes.index', 'orden' => 10, 'acciones' => ['listar' => 'Ver reportes']],
             ['clave' => 'bitacora', 'nombre' => 'Bitácora', 'icono' => 'ScrollText', 'ruta' => 'bitacora.index', 'orden' => 11, 'acciones' => ['listar' => 'Ver bitácora'] + $reportar],
             ['clave' => 'acceso', 'nombre' => 'Control de Acceso', 'icono' => 'ShieldCheck', 'ruta' => 'acceso.matriz', 'orden' => 12, 'acciones' => ['listar' => 'Ver matriz', 'modificar' => 'Editar matriz']],
+            // Modulos de la perspectiva CLIENTE (autoservicio). Se muestran en el sidebar en una seccion
+            // aparte ("Mi cuenta"); igual son gestionables por la matriz.
+            ['clave' => 'mis_compras', 'nombre' => 'Mis compras', 'icono' => 'Receipt', 'ruta' => 'mis-compras.index', 'orden' => 13, 'acciones' => ['ver' => 'Ver']],
+            ['clave' => 'mis_pagos', 'nombre' => 'Mis pagos', 'icono' => 'CreditCard', 'ruta' => 'mis-pagos.index', 'orden' => 14, 'acciones' => ['ver' => 'Ver', 'pagar' => 'Realizar pago']],
         ];
 
         foreach ($modulos as $m) {
