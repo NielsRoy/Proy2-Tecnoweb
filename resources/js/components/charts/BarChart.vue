@@ -18,6 +18,7 @@ const props = defineProps<{
     labels: string[];
     data: number[];
     label?: string;
+    ejeY?: string | null;
 }>();
 
 const chartData = computed(() => ({
@@ -48,6 +49,11 @@ const chartOptions = computed(() => ({
             beginAtZero: true,
             ticks: { color: colorTexto() },
             grid: { color: colorGrilla() },
+            title: {
+                display: !!props.ejeY,
+                text: props.ejeY ?? '',
+                color: colorTexto(),
+            },
         },
     },
 }));

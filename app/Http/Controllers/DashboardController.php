@@ -19,16 +19,19 @@ use Inertia\Response;
  */
 class DashboardController extends Controller
 {
-    /** clave de acción => [título, tipo ('bar'|'pie'), método privado que calcula [labels, data]]. */
+    /**
+     * clave de acción => [título, tipo ('bar'|'pie'), método que calcula [labels, data], rótulo del
+     * eje Y (unidad; null en tortas)].
+     */
     private const GRAFICOS = [
-        'graf_productos' => ['Productos más vendidos', 'bar', 'productosMasVendidos'],
-        'graf_ingresos' => ['Ingresos por mes', 'bar', 'ingresosPorMes'],
-        'graf_metodo_pago' => ['Pagos por método', 'pie', 'pagosPorMetodo'],
-        'graf_tipo_pago' => ['Ventas por tipo de pago', 'pie', 'ventasPorTipoPago'],
-        'graf_clientes' => ['Top clientes', 'bar', 'topClientes'],
-        'graf_proveedores' => ['Top proveedores', 'bar', 'topProveedores'],
-        'graf_stock' => ['Productos con bajo stock', 'bar', 'bajoStock'],
-        'graf_promociones' => ['Top promociones por ingresos', 'bar', 'topPromociones'],
+        'graf_productos' => ['Productos más vendidos', 'bar', 'productosMasVendidos', 'Unidades vendidas'],
+        'graf_ingresos' => ['Ingresos por mes', 'bar', 'ingresosPorMes', 'Ingresos (Bs)'],
+        'graf_metodo_pago' => ['Pagos por método', 'pie', 'pagosPorMetodo', null],
+        'graf_tipo_pago' => ['Ventas por tipo de pago', 'pie', 'ventasPorTipoPago', null],
+        'graf_clientes' => ['Top clientes', 'bar', 'topClientes', 'Monto vendido (Bs)'],
+        'graf_proveedores' => ['Top proveedores', 'bar', 'topProveedores', 'Monto comprado (Bs)'],
+        'graf_stock' => ['Productos con bajo stock', 'bar', 'bajoStock', 'Stock (unidades)'],
+        'graf_promociones' => ['Top promociones por ingresos', 'bar', 'topPromociones', 'Ingresos (Bs)'],
     ];
 
     public function index(Request $request): Response
@@ -36,13 +39,13 @@ class DashboardController extends Controller
         $user = $request->user();
         $graficos = [];
 
-        foreach (self::GRAFICOS as $clave => [$titulo, $tipo, $metodo]) {
+        foreach (self::GRAFICOS as $clave => [$titulo, $tipo, $metodo, $ejeY]) {
             if (! $user->tienePermiso('dashboard', $clave)) {
                 continue;
             }
 
             [$labels, $data] = $this->{$metodo}();
-            $graficos[] = compact('clave', 'titulo', 'tipo', 'labels', 'data');
+            $graficos[] = compact('clave', 'titulo', 'tipo', 'labels', 'data', 'ejeY');
         }
 
         return Inertia::render('Dashboard', ['graficos' => $graficos]);

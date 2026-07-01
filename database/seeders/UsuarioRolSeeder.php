@@ -19,6 +19,14 @@ class UsuarioRolSeeder extends Seeder
             ['name' => 'Vendedor Demo', 'email' => 'vendedor@tiendadyd.com', 'rol' => 'Vendedor'],
             ['name' => 'Cliente Demo', 'email' => 'cliente@tiendadyd.com', 'rol' => 'Cliente'],
             ['name' => 'Proveedor Demo', 'email' => 'proveedor@tiendadyd.com', 'rol' => 'Proveedor'],
+            // Clientes y proveedores extra: dan variedad a los gráficos del Dashboard (top clientes /
+            // top proveedores). Todos con password "password".
+            ['name' => 'Ana Torres', 'email' => 'ana@tiendadyd.com', 'rol' => 'Cliente'],
+            ['name' => 'Luis Pérez', 'email' => 'luis@tiendadyd.com', 'rol' => 'Cliente'],
+            ['name' => 'María Gómez', 'email' => 'maria@tiendadyd.com', 'rol' => 'Cliente'],
+            ['name' => 'Carlos Ruiz', 'email' => 'carlos@tiendadyd.com', 'rol' => 'Cliente'],
+            ['name' => 'Distribuidora Andina', 'email' => 'distribuidora@tiendadyd.com', 'rol' => 'Proveedor'],
+            ['name' => 'Mayorista El Sol', 'email' => 'mayorista@tiendadyd.com', 'rol' => 'Proveedor'],
         ];
 
         foreach ($usuarios as $u) {

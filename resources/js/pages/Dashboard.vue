@@ -11,6 +11,7 @@ type Grafico = {
     tipo: 'bar' | 'pie';
     labels: string[];
     data: number[];
+    ejeY: string | null;
 };
 
 const props = defineProps<{
@@ -66,6 +67,7 @@ function tieneDatos(g: Grafico): boolean {
                         v-if="g.tipo === 'bar'"
                         :labels="g.labels"
                         :data="g.data"
+                        :eje-y="g.ejeY"
                     />
                     <PieChart v-else :labels="g.labels" :data="g.data" />
                 </template>
