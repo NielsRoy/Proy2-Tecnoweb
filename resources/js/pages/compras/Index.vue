@@ -50,6 +50,7 @@ const props = defineProps<{
     proveedores: { id: number; name: string }[];
     puedeCrear: boolean;
     puedeEliminar: boolean;
+    puedeReportar: boolean;
 }>();
 
 defineOptions({
@@ -181,6 +182,7 @@ function confirmarAnular(): void {
                 <Button @click="aplicar">Filtrar</Button>
                 <Button variant="outline" @click="limpiar">Limpiar</Button>
                 <BotonesReporte
+                    v-if="puedeReportar"
                     class="ml-auto"
                     :url="reporte().url"
                     :query="queryFiltros()"

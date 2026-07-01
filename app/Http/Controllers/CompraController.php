@@ -50,6 +50,7 @@ class CompraController extends Controller
             'proveedores' => User::conRolVigente('Proveedor')->orderBy('name')->get(['id', 'name']),
             'puedeCrear' => $request->user()->tienePermiso('compras', 'registrar'),
             'puedeEliminar' => $request->user()->tienePermiso('compras', 'eliminar'),
+            'puedeReportar' => $request->user()->tienePermiso('compras', 'reportar'),
         ]);
     }
 

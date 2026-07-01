@@ -41,6 +41,7 @@ const props = defineProps<{
     filtros: Filtros;
     productos: { id: number; nombre: string }[];
     puedeCrear: boolean;
+    puedeReportar: boolean;
 }>();
 
 defineOptions({
@@ -171,6 +172,7 @@ const selectClass =
                 <Button @click="aplicar">Filtrar</Button>
                 <Button variant="outline" @click="limpiar">Limpiar</Button>
                 <BotonesReporte
+                    v-if="puedeReportar"
                     class="ml-auto"
                     :url="reporte().url"
                     :query="queryFiltros()"

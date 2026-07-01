@@ -38,6 +38,7 @@ const props = defineProps<{
     puedeCrear: boolean;
     puedeEditar: boolean;
     puedeEliminar: boolean;
+    puedeReportar: boolean;
     usuarioActualId: number;
 }>();
 
@@ -113,7 +114,11 @@ function confirmarEliminar(): void {
                 </p>
             </div>
             <div class="flex flex-wrap items-center gap-2">
-                <BotonesReporte :url="reporte().url" :query="queryFiltros()" />
+                <BotonesReporte
+                    v-if="puedeReportar"
+                    :url="reporte().url"
+                    :query="queryFiltros()"
+                />
                 <Button v-if="puedeCrear" as-child>
                     <Link :href="create()">Nuevo usuario</Link>
                 </Button>

@@ -45,6 +45,7 @@ class PromocionController extends Controller
             'puedeCrear' => $request->user()->tienePermiso('promociones', 'registrar'),
             'puedeEditar' => $request->user()->tienePermiso('promociones', 'modificar'),
             'puedeEliminar' => $request->user()->tienePermiso('promociones', 'eliminar'),
+            'puedeReportar' => $request->user()->tienePermiso('promociones', 'reportar'),
         ]);
     }
 

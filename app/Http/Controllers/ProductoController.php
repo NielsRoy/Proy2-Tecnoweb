@@ -44,6 +44,7 @@ class ProductoController extends Controller
             'puedeCrear' => $request->user()->tienePermiso('productos', 'registrar'),
             'puedeEditar' => $request->user()->tienePermiso('productos', 'modificar'),
             'puedeEliminar' => $request->user()->tienePermiso('productos', 'eliminar'),
+            'puedeReportar' => $request->user()->tienePermiso('productos', 'reportar'),
         ]);
     }
 

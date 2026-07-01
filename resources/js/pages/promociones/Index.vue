@@ -41,6 +41,7 @@ const props = defineProps<{
     puedeCrear: boolean;
     puedeEditar: boolean;
     puedeEliminar: boolean;
+    puedeReportar: boolean;
 }>();
 
 defineOptions({
@@ -121,7 +122,11 @@ function descuento(p: PromocionItem): string {
                 </p>
             </div>
             <div class="flex flex-wrap items-center gap-2">
-                <BotonesReporte :url="reporte().url" :query="queryFiltros()" />
+                <BotonesReporte
+                    v-if="puedeReportar"
+                    :url="reporte().url"
+                    :query="queryFiltros()"
+                />
                 <Button v-if="puedeCrear" as-child>
                     <Link :href="create()">Nueva promoción</Link>
                 </Button>

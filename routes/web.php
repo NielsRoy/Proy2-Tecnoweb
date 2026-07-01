@@ -43,7 +43,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/', [UsuarioController::class, 'store'])
             ->middleware('permiso:usuarios,registrar')->name('store');
         Route::get('reporte', [UsuarioController::class, 'reporte'])
-            ->middleware('permiso:usuarios,listar')->name('reporte');
+            ->middleware('permiso:usuarios,reportar')->name('reporte');
         Route::get('{usuario}/editar', [UsuarioController::class, 'edit'])
             ->middleware('permiso:usuarios,modificar')->name('edit');
         Route::put('{usuario}', [UsuarioController::class, 'update'])
@@ -61,7 +61,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/', [ProductoController::class, 'store'])
             ->middleware('permiso:productos,registrar')->name('store');
         Route::get('reporte', [ProductoController::class, 'reporte'])
-            ->middleware('permiso:productos,listar')->name('reporte');
+            ->middleware('permiso:productos,reportar')->name('reporte');
         Route::get('{producto}/editar', [ProductoController::class, 'edit'])
             ->middleware('permiso:productos,modificar')->name('edit');
         Route::put('{producto}', [ProductoController::class, 'update'])
@@ -97,7 +97,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->middleware('permiso:compras,registrar')->name('store');
         // Reporte (PDF/CSV) de la lista filtrada. ANTES del comodin {compra} para que no lo capture.
         Route::get('reporte', [CompraController::class, 'reporte'])
-            ->middleware('permiso:compras,listar')->name('reporte');
+            ->middleware('permiso:compras,reportar')->name('reporte');
         Route::get('{compra}', [CompraController::class, 'show'])
             ->middleware('permiso:compras,listar')->name('show');
         Route::delete('{compra}', [CompraController::class, 'destroy'])
@@ -114,7 +114,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/', [InventarioController::class, 'store'])
             ->middleware('permiso:inventarios,registrar')->name('store');
         Route::get('reporte', [InventarioController::class, 'reporte'])
-            ->middleware('permiso:inventarios,listar')->name('reporte');
+            ->middleware('permiso:inventarios,reportar')->name('reporte');
     });
 
     // CU6 Promociones (modulo "promociones"): CRUD por producto. Eliminar = baja logica.
@@ -126,7 +126,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/', [PromocionController::class, 'store'])
             ->middleware('permiso:promociones,registrar')->name('store');
         Route::get('reporte', [PromocionController::class, 'reporte'])
-            ->middleware('permiso:promociones,listar')->name('reporte');
+            ->middleware('permiso:promociones,reportar')->name('reporte');
         Route::get('{promocion}/editar', [PromocionController::class, 'edit'])
             ->middleware('permiso:promociones,modificar')->name('edit');
         Route::put('{promocion}', [PromocionController::class, 'update'])
@@ -146,7 +146,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->middleware('permiso:ventas,registrar')->name('store');
         // Reporte (PDF/CSV) de la lista filtrada. ANTES del comodin {venta} para que no lo capture.
         Route::get('reporte', [VentaController::class, 'reporte'])
-            ->middleware('permiso:ventas,listar')->name('reporte');
+            ->middleware('permiso:ventas,reportar')->name('reporte');
         Route::get('{venta}', [VentaController::class, 'show'])
             ->middleware('permiso:ventas,listar')->name('show');
         Route::delete('{venta}', [VentaController::class, 'destroy'])
@@ -164,7 +164,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->middleware('permiso:bitacora,listar')
         ->name('bitacora.index');
     Route::get('bitacora/reporte', [BitacoraController::class, 'reporte'])
-        ->middleware('permiso:bitacora,listar')
+        ->middleware('permiso:bitacora,reportar')
         ->name('bitacora.reporte');
 
     // Matriz de Acceso (solo quien tenga el permiso del modulo "acceso").

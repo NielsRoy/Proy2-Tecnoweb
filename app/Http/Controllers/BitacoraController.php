@@ -39,6 +39,7 @@ class BitacoraController extends Controller
             // Opciones para los selects de filtro.
             'acciones' => Bitacora::query()->distinct()->orderBy('accion')->pluck('accion'),
             'usuarios' => User::orderBy('name')->get(['id', 'name']),
+            'puedeReportar' => $request->user()->tienePermiso('bitacora', 'reportar'),
         ]);
     }
 

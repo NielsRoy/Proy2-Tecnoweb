@@ -42,6 +42,7 @@ const props = defineProps<{
     filtros: Filtros;
     acciones: string[];
     usuarios: { id: number; name: string }[];
+    puedeReportar: boolean;
 }>();
 
 defineOptions({
@@ -167,6 +168,7 @@ const selectClass =
                 <Button @click="aplicar">Filtrar</Button>
                 <Button variant="outline" @click="limpiar">Limpiar</Button>
                 <BotonesReporte
+                    v-if="puedeReportar"
                     class="ml-auto"
                     :url="reporte().url"
                     :query="queryFiltros()"

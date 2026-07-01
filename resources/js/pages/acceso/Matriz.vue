@@ -40,25 +40,26 @@ props.roles.forEach((rol) => {
     seleccion[rol.id] = new Set(props.asignaciones[rol.id] ?? []);
 });
 
-// Acciones de escritura: tenerlas implica tener "listar" (ver) del mismo modulo.
-const ESCRITURA = ['registrar', 'modificar', 'eliminar'];
+// Acciones que dependen de "ver": tenerlas implica tener "listar" del mismo modulo (no se puede
+// editar ni reportar sin ver). Incluye la escritura y "reportar".
+const DEPENDEN_DE_LISTAR = ['registrar', 'modificar', 'eliminar', 'reportar'];
 
-// Lookups para resolver la dependencia "editar => ver" al togglear un checkbox.
+// Lookups para resolver la dependencia "=> ver (listar)" al togglear un checkbox.
 const infoAccion = new Map<number, { moduloId: number; clave: string }>();
 const listarDeModulo = new Map<number, number>(); // moduloId => accion "listar"
-const escriturasDeModulo = new Map<number, number[]>(); // moduloId => [acciones de escritura]
+const dependientesDeModulo = new Map<number, number[]>(); // moduloId => [acciones que requieren listar]
 props.modulos.forEach((modulo) => {
-    const escrituras: number[] = [];
+    const dependientes: number[] = [];
     modulo.acciones.forEach((accion) => {
         infoAccion.set(accion.id, { moduloId: modulo.id, clave: accion.clave });
         if (accion.clave === 'listar') {
             listarDeModulo.set(modulo.id, accion.id);
         }
-        if (ESCRITURA.includes(accion.clave)) {
-            escrituras.push(accion.id);
+        if (DEPENDEN_DE_LISTAR.includes(accion.clave)) {
+            dependientes.push(accion.id);
         }
     });
-    escriturasDeModulo.set(modulo.id, escrituras);
+    dependientesDeModulo.set(modulo.id, dependientes);
 });
 
 function estaMarcado(rolId: number, accionId: number): boolean {
@@ -75,8 +76,8 @@ function alternar(
 
     if (valor === true) {
         set.add(accionId);
-        // Habilitar una accion de escritura implica habilitar "ver" (listar) del modulo.
-        if (info && ESCRITURA.includes(info.clave)) {
+        // Habilitar una accion que depende de ver (escritura/reportar) implica habilitar "listar".
+        if (info && DEPENDEN_DE_LISTAR.includes(info.clave)) {
             const listarId = listarDeModulo.get(info.moduloId);
             if (listarId !== undefined) {
                 set.add(listarId);
@@ -84,9 +85,9 @@ function alternar(
         }
     } else {
         set.delete(accionId);
-        // Quitar "ver" (listar) implica quitar las acciones de escritura del modulo.
+        // Quitar "ver" (listar) implica quitar las acciones que dependen de ver del modulo.
         if (info && info.clave === 'listar') {
-            escriturasDeModulo
+            dependientesDeModulo
                 .get(info.moduloId)
                 ?.forEach((id) => set.delete(id));
         }

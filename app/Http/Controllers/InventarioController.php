@@ -44,6 +44,7 @@ class InventarioController extends Controller
             'filtros' => $filtros,
             'productos' => Producto::where('activo', true)->orderBy('nombre')->get(['id', 'nombre']),
             'puedeCrear' => $request->user()->tienePermiso('inventarios', 'registrar'),
+            'puedeReportar' => $request->user()->tienePermiso('inventarios', 'reportar'),
         ]);
     }
 

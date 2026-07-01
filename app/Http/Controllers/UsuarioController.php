@@ -55,6 +55,7 @@ class UsuarioController extends Controller
             'puedeCrear' => $request->user()->tienePermiso('usuarios', 'registrar'),
             'puedeEditar' => $request->user()->tienePermiso('usuarios', 'modificar'),
             'puedeEliminar' => $request->user()->tienePermiso('usuarios', 'eliminar'),
+            'puedeReportar' => $request->user()->tienePermiso('usuarios', 'reportar'),
             // Para no permitir que un usuario se elimine a si mismo desde la lista.
             'usuarioActualId' => $request->user()->id,
         ]);

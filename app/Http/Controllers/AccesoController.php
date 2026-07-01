@@ -96,9 +96,9 @@ class AccesoController extends Controller
     }
 
     /**
-     * Garantiza coherencia: si un rol tiene una accion de escritura (registrar/modificar/
-     * eliminar) en un modulo, debe tener tambien su "listar" (no se puede editar sin ver).
-     * Es la misma regla que aplica el front, reforzada aqui por seguridad.
+     * Garantiza coherencia: si un rol tiene una accion que DEPENDE de ver (escritura
+     * registrar/modificar/eliminar o "reportar") en un modulo, debe tener tambien su "listar"
+     * (no se puede editar ni reportar sin ver). Es la misma regla que aplica el front.
      *
      * @param  array<int, int>  $accionIds
      * @return array<int, int>
@@ -111,15 +111,15 @@ class AccesoController extends Controller
 
         $seleccionadas = Accion::whereIn('id', $accionIds)->get(['id', 'modulo_id', 'clave']);
 
-        $modulosConEscritura = $seleccionadas
-            ->whereIn('clave', ['registrar', 'modificar', 'eliminar'])
+        $modulosQueRequierenListar = $seleccionadas
+            ->whereIn('clave', ['registrar', 'modificar', 'eliminar', 'reportar'])
             ->pluck('modulo_id')->unique();
 
         $ids = collect($accionIds);
 
-        if ($modulosConEscritura->isNotEmpty()) {
+        if ($modulosQueRequierenListar->isNotEmpty()) {
             $ids = $ids->merge(
-                Accion::whereIn('modulo_id', $modulosConEscritura)
+                Accion::whereIn('modulo_id', $modulosQueRequierenListar)
                     ->where('clave', 'listar')->where('activo', true)
                     ->pluck('id'),
             );

@@ -62,6 +62,7 @@ class VentaController extends Controller
             'clientes' => User::conRolVigente('Cliente')->orderBy('name')->get(['id', 'name']),
             'puedeCrear' => $request->user()->tienePermiso('ventas', 'registrar'),
             'puedeEliminar' => $request->user()->tienePermiso('ventas', 'eliminar'),
+            'puedeReportar' => $request->user()->tienePermiso('ventas', 'reportar'),
         ]);
     }
 
