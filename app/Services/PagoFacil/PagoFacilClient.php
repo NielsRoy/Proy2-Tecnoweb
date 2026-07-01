@@ -2,7 +2,6 @@
 
 namespace App\Services\PagoFacil;
 
-use App\Models\Pago;
 use App\Models\User;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
@@ -37,13 +36,15 @@ class PagoFacilClient
     }
 
     /**
-     * Genera un QR de cobro para una cuota. Devuelve el transactionId de PagoFacil, el QR en base64
-     * y la fecha de expiracion. `$cliente` son los datos fiscales ya resueltos (ver datosCliente()).
+     * Genera un QR de cobro para un `paymentNumber` (UUID = companyTransactionId). Devuelve el
+     * transactionId de PagoFacil, el QR en base64 y la fecha de expiracion. `$cliente` son los datos
+     * fiscales ya resueltos (ver datosCliente()). No depende de un modelo: lo usan tanto el cobro de
+     * una cuota existente como el registro diferido de una venta al contado.
      *
      * @param  array{name:string, document:string, phone:string, email:string, code:string}  $cliente
      * @return array{transactionId:?string, qrBase64:?string, expirationDate:?string, status:int}
      */
-    public function generarQr(Pago $cuota, array $cliente, string $detalle): array
+    public function generarQr(string $paymentNumber, array $cliente, string $detalle): array
     {
         $amount = $this->config['amount'];
 
@@ -54,7 +55,7 @@ class PagoFacilClient
             'documentId' => $cliente['document'],
             'phoneNumber' => $cliente['phone'],
             'email' => $cliente['email'],
-            'paymentNumber' => (string) $cuota->payment_number,
+            'paymentNumber' => $paymentNumber,
             'amount' => $amount,
             'currency' => (int) $this->config['currency'],
             'clientCode' => $cliente['code'],
@@ -86,7 +87,12 @@ class PagoFacilClient
 
     /**
      * Consulta el estado de una transaccion por su companyTransactionId (= payment_number).
-     * `paid` es true cuando ya hay paymentDate (pago real registrado).
+     *
+     * Deteccion de pago (para este proyecto academico): consideramos pagada la transaccion en cuanto
+     * PagoFacil devuelve datos del pagador (payerBank/payerAccount/payerName) o una fecha de pago, o el
+     * estado "pagado" (paid_status, por defecto 5). El estado 5 es en realidad un estado de revision de
+     * PagoFacil que normalmente requiere un urlCallback para confirmarse; como no usamos callback, nos
+     * basta con que lleguen los datos del pagador (que suelen aparecer antes que el estado 5).
      *
      * @return array{paymentStatus:int, paid:bool, paymentDate:?string, paymentTime:?string, payerName:?string, payerBank:?string, payerAccount:?string}
      */
@@ -96,16 +102,26 @@ class PagoFacilClient
             'companyTransactionId' => $companyTransactionId,
         ])->json('values') ?? [];
 
+        $paymentStatus = (int) ($values['paymentStatus'] ?? 0);
         $paymentDate = $values['paymentDate'] ?? null;
+        $payerName = $values['payerName'] ?? null;
+        $payerBank = $values['payerBank'] ?? null;
+        $payerAccount = $values['payerAccount'] ?? null;
+
+        $paid = ! empty($paymentDate)
+            || ! empty($payerBank)
+            || ! empty($payerAccount)
+            || ! empty($payerName)
+            || $paymentStatus === (int) $this->config['paid_status'];
 
         return [
-            'paymentStatus' => (int) ($values['paymentStatus'] ?? 0),
-            'paid' => ! empty($paymentDate),
+            'paymentStatus' => $paymentStatus,
+            'paid' => $paid,
             'paymentDate' => $paymentDate,
             'paymentTime' => $values['paymentTime'] ?? null,
-            'payerName' => $values['payerName'] ?? null,
-            'payerBank' => $values['payerBank'] ?? null,
-            'payerAccount' => $values['payerAccount'] ?? null,
+            'payerName' => $payerName,
+            'payerBank' => $payerBank,
+            'payerAccount' => $payerAccount,
         ];
     }
 

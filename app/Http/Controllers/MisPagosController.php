@@ -68,7 +68,7 @@ class MisPagosController extends Controller
                 'venta_id' => $p->venta_id,
                 'numero_cuota' => $p->numero_cuota,
                 'monto' => $p->monto,
-                'fecha_pago' => $p->fecha_pago?->toDateString(),
+                'fecha_pago' => $p->fecha_pago?->format('d/m/Y H:i'),
                 'metodo' => $p->metodo,
             ]);
 

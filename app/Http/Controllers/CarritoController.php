@@ -131,28 +131,50 @@ class CarritoController extends Controller
             return back();
         }
 
-        // RegistrarVenta valida stock/promo/credito/bloqueo y lanza ValidationException si algo falla.
-        $venta = $registrar->ejecutar([
+        $lineas = $lineasCarrito
+            ->map(fn (Carrito $c) => ['producto_id' => $c->producto_id, 'cantidad' => $c->cantidad])
+            ->all();
+
+        // Contado por QR: NO se registra la venta todavia. Se valida el stock/monto y se guarda la
+        // intencion de compra en sesion; la venta se registra recien al confirmar el pago del QR.
+        if ($datos['tipo_pago'] === Venta::TIPO_CONTADO && ($datos['metodo'] ?? null) === Pago::METODO_QR) {
+            $monto = $registrar->previsualizar($lineas); // valida stock; lanza ValidationException
+
+            $request->session()->put('qr_venta', [
+                'payment_number' => null,
+                'transaction_id' => null,
+                'payload' => [
+                    'cliente_id' => $uid,
+                    'fecha_venta' => today()->toDateString(),
+                    'direccion_envio' => $datos['direccion_envio'],
+                    'tipo_pago' => Venta::TIPO_CONTADO,
+                    'metodo' => Pago::METODO_QR,
+                    'numero_cuotas' => null,
+                    'lineas' => $lineas,
+                ],
+                'monto' => $monto,
+                'origen' => 'tienda',
+                'retorno' => 'inicio',
+                'titulo' => 'Pago de tu compra',
+            ]);
+
+            return redirect()->route('pagos.qr-venta');
+        }
+
+        // Resto (contado por otros medios o credito): RegistrarVenta valida stock/promo/credito/bloqueo
+        // y lanza ValidationException si algo falla.
+        $registrar->ejecutar([
             'cliente_id' => $uid,
             'fecha_venta' => today()->toDateString(),
             'direccion_envio' => $datos['direccion_envio'],
             'tipo_pago' => $datos['tipo_pago'],
             'metodo' => $datos['metodo'] ?? null,
             'numero_cuotas' => $datos['numero_cuotas'] ?? null,
-            'lineas' => $lineasCarrito
-                ->map(fn (Carrito $c) => ['producto_id' => $c->producto_id, 'cantidad' => $c->cantidad])
-                ->all(),
+            'lineas' => $lineas,
         ]);
 
-        // Compra registrada: vaciar el carrito (la venta ya existe, aunque el QR quede por pagar).
+        // Compra registrada: vaciar el carrito.
         Carrito::where('cliente_id', $uid)->delete();
-
-        // Contado por QR: la venta nace pendiente; se cobra en la pagina del QR (con polling).
-        if (($datos['metodo'] ?? null) === Pago::METODO_QR) {
-            $cuota = $venta->pagos()->where('numero_cuota', 1)->firstOrFail();
-
-            return redirect()->route('pagos.qr', ['pago' => $cuota->id, 'retorno' => 'inicio']);
-        }
 
         $this->toastExito('¡Compra realizada con éxito!');
 

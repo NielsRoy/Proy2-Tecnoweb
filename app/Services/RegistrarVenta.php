@@ -115,9 +115,10 @@ class RegistrarVenta
                     ]);
                 }
             } else {
-                // Contado: una unica cuota. Con QR (pago asincrono) NO se salda aqui: nace pendiente y
-                // se cobra en el flujo QR (PagoQrController); con los demas metodos se salda al instante
-                // (-> venta 'pagada').
+                // Contado: una unica cuota que se salda ya con el metodo elegido (-> venta 'pagada').
+                // El contado por QR NO llega aqui hasta que el pago esta confirmado: la venta se
+                // registra recien tras confirmar el QR (ver PagoQrController::estadoVenta), asi que
+                // cuando se llama a este servicio el pago ya es efectivo y se salda igual que el resto.
                 $cuota = Pago::create([
                     'venta_id' => $venta->id,
                     'numero_cuota' => 1,
@@ -125,10 +126,7 @@ class RegistrarVenta
                     'fecha_vencimiento' => $datos['fecha_venta'],
                     'estado' => Pago::ESTADO_PENDIENTE,
                 ]);
-
-                if ($datos['metodo'] !== Pago::METODO_QR) {
-                    Pago::saldar($cuota, $datos['metodo']);
-                }
+                Pago::saldar($cuota, $datos['metodo']);
             }
 
             Bitacora::registrar(
@@ -139,6 +137,21 @@ class RegistrarVenta
 
             return $venta;
         });
+    }
+
+    /**
+     * Previsualiza/valida las lineas SIN persistir nada: valida stock y devuelve el monto base (suma
+     * de subtotales con la promo vigente aplicada). Lo usa el checkout contado+QR para validar y
+     * conocer el importe ANTES de generar el QR (la venta se registra recien al confirmar el pago).
+     * Lanza ValidationException en espanol si falta stock.
+     *
+     * @param  array<int, array{producto_id:int, cantidad:int}>  $lineasInput
+     */
+    public function previsualizar(array $lineasInput): float
+    {
+        [, $base] = $this->resolverLineas($lineasInput);
+
+        return $base;
     }
 
     /**

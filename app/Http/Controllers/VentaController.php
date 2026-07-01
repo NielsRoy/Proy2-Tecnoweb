@@ -202,16 +202,35 @@ class VentaController extends Controller
     {
         $datos = $this->validar($request);
 
-        // Toda la logica de negocio (lineas/stock/promo/credito/bloqueo/transaccion) vive en el
-        // servicio, compartido con la tienda autoservicio.
-        $venta = $registrar->ejecutar($datos);
+        // Contado por QR: NO se registra la venta todavia. Se valida el stock/monto y se guarda la
+        // intencion en sesion; la venta se registra recien al confirmar el pago del QR (con polling).
+        if ($datos['tipo_pago'] === Venta::TIPO_CONTADO && ($datos['metodo'] ?? null) === Pago::METODO_QR) {
+            $monto = $registrar->previsualizar($datos['lineas']); // valida stock; lanza ValidationException
 
-        // Contado por QR: la venta nace pendiente; se cobra en el flujo QR (pagina con QR + polling).
-        if (($datos['metodo'] ?? null) === Pago::METODO_QR) {
-            $cuota = $venta->pagos()->where('numero_cuota', 1)->firstOrFail();
+            $request->session()->put('qr_venta', [
+                'payment_number' => null,
+                'transaction_id' => null,
+                'payload' => [
+                    'cliente_id' => $datos['cliente_id'],
+                    'fecha_venta' => $datos['fecha_venta'],
+                    'direccion_envio' => $datos['direccion_envio'] ?? null,
+                    'tipo_pago' => Venta::TIPO_CONTADO,
+                    'metodo' => Pago::METODO_QR,
+                    'numero_cuotas' => null,
+                    'lineas' => $datos['lineas'],
+                ],
+                'monto' => $monto,
+                'origen' => 'admin',
+                'retorno' => 'ventas.index',
+                'titulo' => 'Cobro de venta al contado',
+            ]);
 
-            return redirect()->route('pagos.qr', ['pago' => $cuota->id, 'retorno' => 'ventas.index']);
+            return redirect()->route('pagos.qr-venta');
         }
+
+        // Resto (contado por otros medios o credito): toda la logica de negocio vive en el servicio,
+        // compartido con la tienda autoservicio.
+        $registrar->ejecutar($datos);
 
         $this->toastExito('Venta registrada.');
 
@@ -245,7 +264,7 @@ class VentaController extends Controller
                     'numero_cuota' => $p->numero_cuota,
                     'monto' => $p->monto,
                     'fecha_vencimiento' => $p->fecha_vencimiento?->toDateString(),
-                    'fecha_pago' => $p->fecha_pago?->toDateString(),
+                    'fecha_pago' => $p->fecha_pago?->format('d/m/Y H:i'),
                     'metodo' => $p->metodo,
                     'estado' => $p->estado,
                 ]),

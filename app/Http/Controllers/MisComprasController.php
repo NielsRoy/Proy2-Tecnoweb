@@ -75,7 +75,7 @@ class MisComprasController extends Controller
                     'numero_cuota' => $p->numero_cuota,
                     'monto' => $p->monto,
                     'fecha_vencimiento' => $p->fecha_vencimiento?->toDateString(),
-                    'fecha_pago' => $p->fecha_pago?->toDateString(),
+                    'fecha_pago' => $p->fecha_pago?->format('d/m/Y H:i'),
                     'metodo' => $p->metodo,
                     'estado' => $p->estado,
                 ]),

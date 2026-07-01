@@ -34,9 +34,14 @@ Route::middleware('auth')->group(function () {
     // Pago por QR de PagoFacil (requisito #10): flujo asincrono comun a los 4 puntos de pago. Solo
     // 'auth' (la autorizacion fina -dueño de la venta o admin de pagos- la hace PagoQrController).
     // generar/estado devuelven JSON (los consume el polling del navegador), no Inertia.
+    // Variante A: cobro de una cuota YA registrada (credito, o contado por otros medios).
     Route::get('qr/{pago}', [PagoQrController::class, 'mostrar'])->name('pagos.qr');
     Route::post('qr/{pago}/generar', [PagoQrController::class, 'generar'])->name('pagos.qr.generar');
     Route::get('qr/{pago}/estado', [PagoQrController::class, 'estado'])->name('pagos.qr.estado');
+    // Variante B: venta al contado por QR que NO se registra hasta confirmar el pago (intencion en sesion).
+    Route::get('qr-venta', [PagoQrController::class, 'mostrarVenta'])->name('pagos.qr-venta');
+    Route::post('qr-venta/generar', [PagoQrController::class, 'generarVenta'])->name('pagos.qr-venta.generar');
+    Route::get('qr-venta/estado', [PagoQrController::class, 'estadoVenta'])->name('pagos.qr-venta.estado');
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {

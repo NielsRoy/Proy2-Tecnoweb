@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
  * Pago (CU7): cada fila es una CUOTA del cronograma de una venta. payment_number /
@@ -14,8 +15,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $venta_id
  * @property int $numero_cuota
  * @property string $monto
- * @property \Illuminate\Support\Carbon $fecha_vencimiento
- * @property \Illuminate\Support\Carbon|null $fecha_pago
+ * @property Carbon $fecha_vencimiento
+ * @property Carbon|null $fecha_pago
  * @property string|null $metodo
  * @property string $estado
  * @property string|null $payment_number
@@ -46,7 +47,7 @@ class Pago extends Model
             'numero_cuota' => 'integer',
             'monto' => 'decimal:2',
             'fecha_vencimiento' => 'date',
-            'fecha_pago' => 'date',
+            'fecha_pago' => 'datetime', // guarda fecha + hora del pago
         ];
     }
 
@@ -63,7 +64,7 @@ class Pago extends Model
     public static function saldar(self $cuota, string $metodo): void
     {
         $cuota->update([
-            'fecha_pago' => today()->toDateString(),
+            'fecha_pago' => now(), // fecha + hora exactas del pago
             'metodo' => $metodo,
             'estado' => self::ESTADO_PAGADO,
         ]);

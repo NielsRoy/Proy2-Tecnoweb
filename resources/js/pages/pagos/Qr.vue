@@ -1,20 +1,22 @@
 <script setup lang="ts">
 import { Head, router } from '@inertiajs/vue3';
-import { Loader2, QrCode, TriangleAlert } from '@lucide/vue';
+import { CheckCircle2, Loader2, TriangleAlert } from '@lucide/vue';
 import { onBeforeUnmount, onMounted, ref } from 'vue';
-import { toast } from 'vue-sonner';
 import { Button } from '@/components/ui/button';
 
-type Cuota = {
-    id: number;
-    venta_id: number;
-    numero_cuota: number;
-    total_cuotas: number | null;
-    monto: string;
+type PagoDetalle = {
+    metodo: string;
+    monto: string | null;
+    banco: string | null;
+    cuenta: string | null;
+    titular: string | null;
+    fecha: string | null;
+    hora: string | null;
 };
 
 const props = defineProps<{
-    cuota: Cuota;
+    titulo: string;
+    monto: string;
     retornoUrl: string;
     generarUrl: string;
     estadoUrl: string;
@@ -33,6 +35,7 @@ type Estado = 'generando' | 'esperando' | 'pagado' | 'expirado' | 'error';
 const estado = ref<Estado>('generando');
 const qrBase64 = ref<string | null>(null);
 const mensajeError = ref<string | null>(null);
+const pago = ref<PagoDetalle | null>(null);
 const segundosRestantes = ref(props.timeoutSeconds);
 
 let pollTimer: ReturnType<typeof setInterval> | null = null;
@@ -89,7 +92,7 @@ async function generar(): Promise<void> {
     }
 }
 
-// Consulta el estado del pago cada pollSeconds; al confirmarse, salda y vuelve al origen.
+// Consulta el estado del pago cada pollSeconds; al confirmarse, muestra los datos del pago.
 function iniciarPolling(): void {
     pollTimer = setInterval(consultarEstado, Math.max(props.pollSeconds, 2) * 1000);
 }
@@ -113,15 +116,22 @@ async function consultarEstado(esUltima = false): Promise<void> {
             headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
         });
         if (!resp.ok) {
-            return; // fallo puntual: se reintenta en el próximo ciclo
+            // 422 = el pago llegó pero la venta no se pudo registrar (p. ej. stock agotado): mostrarlo.
+            if (resp.status === 422) {
+                const err = await resp.json().catch(() => ({}));
+                limpiarTimers();
+                estado.value = 'error';
+                mensajeError.value =
+                    err.detalle || err.message || 'No se pudo completar el pago.';
+            }
+            return; // otros fallos son puntuales: se reintenta en el próximo ciclo
         }
         const data = await resp.json();
 
         if (data.estado === 'pagado') {
             limpiarTimers();
+            pago.value = data.pago ?? null;
             estado.value = 'pagado';
-            toast.success('¡Pago confirmado!');
-            setTimeout(() => router.visit(props.retornoUrl), 1200);
         } else if (esUltima) {
             estado.value = 'expirado';
         }
@@ -145,8 +155,7 @@ onBeforeUnmount(limpiarTimers);
         <header class="space-y-1 text-center">
             <h1 class="text-xl font-semibold">Pago por QR</h1>
             <p class="text-sm text-muted-foreground">
-                Cuota {{ cuota.numero_cuota }}/{{ cuota.total_cuotas ?? '—' }} de la venta
-                #{{ cuota.venta_id }} · <strong>Bs {{ cuota.monto }}</strong>
+                {{ titulo }} · <strong>Bs {{ monto }}</strong>
             </p>
         </header>
 
@@ -180,14 +189,45 @@ onBeforeUnmount(limpiarTimers);
                 </p>
             </template>
 
-            <!-- Pagado -->
+            <!-- Pagado: datos del pago + botón Regresar -->
             <div
                 v-else-if="estado === 'pagado'"
-                class="flex flex-col items-center gap-3 py-10 text-center"
+                class="flex w-full flex-col items-center gap-4 py-4 text-center"
             >
-                <QrCode class="size-10 text-green-600" />
-                <p class="font-medium">¡Pago confirmado!</p>
-                <p class="text-sm text-muted-foreground">Redirigiendo…</p>
+                <CheckCircle2 class="size-12 text-green-600" />
+                <p class="text-lg font-semibold">¡Pago confirmado!</p>
+
+                <dl
+                    v-if="pago"
+                    class="w-full space-y-1.5 rounded-lg border border-sidebar-border/70 p-4 text-left text-sm dark:border-sidebar-border"
+                >
+                    <div class="flex justify-between gap-4">
+                        <dt class="text-muted-foreground">Monto</dt>
+                        <dd class="font-medium">Bs {{ pago.monto ?? monto }}</dd>
+                    </div>
+                    <div class="flex justify-between gap-4">
+                        <dt class="text-muted-foreground">Método</dt>
+                        <dd class="font-medium">{{ pago.metodo }}</dd>
+                    </div>
+                    <div v-if="pago.titular" class="flex justify-between gap-4">
+                        <dt class="text-muted-foreground">Pagador</dt>
+                        <dd class="font-medium">{{ pago.titular }}</dd>
+                    </div>
+                    <div v-if="pago.banco" class="flex justify-between gap-4">
+                        <dt class="text-muted-foreground">Banco</dt>
+                        <dd class="font-medium">{{ pago.banco }}</dd>
+                    </div>
+                    <div v-if="pago.cuenta" class="flex justify-between gap-4">
+                        <dt class="text-muted-foreground">Cuenta</dt>
+                        <dd class="font-medium">{{ pago.cuenta }}</dd>
+                    </div>
+                    <div v-if="pago.fecha" class="flex justify-between gap-4">
+                        <dt class="text-muted-foreground">Fecha y hora</dt>
+                        <dd class="font-medium">{{ pago.fecha }} {{ pago.hora }}</dd>
+                    </div>
+                </dl>
+
+                <Button class="w-full" @click="volver">Regresar</Button>
             </div>
 
             <!-- Expirado -->
@@ -204,10 +244,7 @@ onBeforeUnmount(limpiarTimers);
             </div>
 
             <!-- Error -->
-            <div
-                v-else
-                class="flex flex-col items-center gap-3 py-8 text-center"
-            >
+            <div v-else class="flex flex-col items-center gap-3 py-8 text-center">
                 <TriangleAlert class="size-10 text-destructive" />
                 <p class="font-medium">No se pudo generar el QR</p>
                 <p class="text-sm text-muted-foreground">{{ mensajeError }}</p>
@@ -215,6 +252,13 @@ onBeforeUnmount(limpiarTimers);
             </div>
         </div>
 
-        <Button variant="outline" @click="volver">Volver</Button>
+        <!-- En estados no finales, permitir volver/cancelar sin pagar. -->
+        <Button
+            v-if="estado !== 'pagado'"
+            variant="outline"
+            @click="volver"
+        >
+            Volver
+        </Button>
     </div>
 </template>
