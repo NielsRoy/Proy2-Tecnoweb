@@ -25,8 +25,13 @@ class MisPagosController extends Controller
     public function index(Request $request): Response
     {
         $uid = $request->user()->id;
+        $filtros = [
+            'desde' => $request->date('desde')?->toDateString(),
+            'hasta' => $request->date('hasta')?->toDateString(),
+        ];
 
-        // Plan activo: cuotas pendientes de las ventas del cliente que no esten anuladas.
+        // Plan activo: TODAS las cuotas pendientes del cliente (no se filtra por fecha; el filtro
+        // de abajo es solo para el historial).
         $pendientes = Pago::with('venta:id,cliente_id,numero_cuotas')
             ->where('estado', Pago::ESTADO_PENDIENTE)
             ->whereHas('venta', fn ($q) => $q->where('cliente_id', $uid)->where('estado', '!=', Venta::ESTADO_ANULADA))
@@ -47,9 +52,11 @@ class MisPagosController extends Controller
             'es_proxima' => $p->numero_cuota === $minPorVenta->get($p->venta_id),
         ])->values();
 
-        // Historial: cuotas ya pagadas del cliente.
+        // Historial: cuotas ya pagadas del cliente, filtradas por rango de FECHA DE PAGO.
         $historial = Pago::where('estado', Pago::ESTADO_PAGADO)
             ->whereHas('venta', fn ($q) => $q->where('cliente_id', $uid))
+            ->when($filtros['desde'], fn ($q, $d) => $q->whereDate('fecha_pago', '>=', $d))
+            ->when($filtros['hasta'], fn ($q, $h) => $q->whereDate('fecha_pago', '<=', $h))
             ->orderByDesc('fecha_pago')
             ->orderByDesc('id')
             ->get()
@@ -64,6 +71,7 @@ class MisPagosController extends Controller
         return Inertia::render('mis-pagos/Index', [
             'plan' => $plan,
             'historial' => $historial,
+            'filtros' => $filtros,
             'metodos' => self::METODOS,
         ]);
     }

@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
+import { reactive } from 'vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { index, show } from '@/routes/mis-compras';
 
 type CompraItem = {
@@ -25,8 +28,9 @@ type Paginado = {
     next_page_url: string | null;
 };
 
-defineProps<{
+const props = defineProps<{
     compras: Paginado;
+    filtros: { desde: string | null; hasta: string | null };
 }>();
 
 defineOptions({
@@ -34,6 +38,28 @@ defineOptions({
         breadcrumbs: [{ title: 'Mis compras', href: index() }],
     },
 });
+
+const filtros = reactive({
+    desde: props.filtros.desde ?? '',
+    hasta: props.filtros.hasta ?? '',
+});
+
+function aplicar(): void {
+    const query: Record<string, string> = {};
+    if (filtros.desde) query.desde = filtros.desde;
+    if (filtros.hasta) query.hasta = filtros.hasta;
+    router.get(index().url, query, {
+        preserveScroll: true,
+        preserveState: true,
+        replace: true,
+    });
+}
+
+function limpiar(): void {
+    filtros.desde = '';
+    filtros.hasta = '';
+    router.get(index().url, {}, { preserveScroll: true, replace: true });
+}
 
 function irA(url: string | null): void {
     if (url) {
@@ -53,6 +79,24 @@ function irA(url: string | null): void {
                 y cuotas.
             </p>
         </header>
+
+        <!-- Filtros -->
+        <div
+            class="grid gap-3 rounded-xl border border-sidebar-border/70 p-3 sm:grid-cols-3 dark:border-sidebar-border"
+        >
+            <div class="grid gap-1.5">
+                <Label for="f-desde">Desde</Label>
+                <Input id="f-desde" type="date" v-model="filtros.desde" />
+            </div>
+            <div class="grid gap-1.5">
+                <Label for="f-hasta">Hasta</Label>
+                <Input id="f-hasta" type="date" v-model="filtros.hasta" />
+            </div>
+            <div class="flex items-end gap-2">
+                <Button @click="aplicar">Filtrar</Button>
+                <Button variant="outline" @click="limpiar">Limpiar</Button>
+            </div>
+        </div>
 
         <div
             class="overflow-x-auto rounded-xl border border-sidebar-border/70 dark:border-sidebar-border"
@@ -124,7 +168,7 @@ function irA(url: string | null): void {
                             colspan="6"
                             class="p-6 text-center text-muted-foreground"
                         >
-                            Todavía no tienes compras.
+                            No hay compras que coincidan con los filtros.
                         </td>
                     </tr>
                 </tbody>

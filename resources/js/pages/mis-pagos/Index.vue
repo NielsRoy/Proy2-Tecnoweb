@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, router } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { reactive, ref } from 'vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -12,6 +12,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { index, pagar } from '@/routes/mis-pagos';
 
@@ -36,6 +37,7 @@ type CuotaHistorial = {
 const props = defineProps<{
     plan: CuotaPlan[];
     historial: CuotaHistorial[];
+    filtros: { desde: string | null; hasta: string | null };
     metodos: string[];
 }>();
 
@@ -44,6 +46,28 @@ defineOptions({
         breadcrumbs: [{ title: 'Mis pagos', href: index() }],
     },
 });
+
+const filtros = reactive({
+    desde: props.filtros.desde ?? '',
+    hasta: props.filtros.hasta ?? '',
+});
+
+function aplicar(): void {
+    const query: Record<string, string> = {};
+    if (filtros.desde) query.desde = filtros.desde;
+    if (filtros.hasta) query.hasta = filtros.hasta;
+    router.get(index().url, query, {
+        preserveScroll: true,
+        preserveState: true,
+        replace: true,
+    });
+}
+
+function limpiar(): void {
+    filtros.desde = '';
+    filtros.hasta = '';
+    router.get(index().url, {}, { preserveScroll: true, replace: true });
+}
 
 // Pago de una cuota (solo la próxima).
 const cuotaAPagar = ref<CuotaPlan | null>(null);
@@ -162,6 +186,25 @@ const selectClass =
         <!-- Historial de pagos -->
         <section class="space-y-2">
             <h2 class="text-sm font-medium">Historial de pagos</h2>
+
+            <!-- Filtros por fecha (solo para el historial, sobre la fecha de pago). -->
+            <div
+                class="grid gap-3 rounded-xl border border-sidebar-border/70 p-3 sm:grid-cols-3 dark:border-sidebar-border"
+            >
+                <div class="grid gap-1.5">
+                    <Label for="f-desde">Desde</Label>
+                    <Input id="f-desde" type="date" v-model="filtros.desde" />
+                </div>
+                <div class="grid gap-1.5">
+                    <Label for="f-hasta">Hasta</Label>
+                    <Input id="f-hasta" type="date" v-model="filtros.hasta" />
+                </div>
+                <div class="flex items-end gap-2">
+                    <Button @click="aplicar">Filtrar</Button>
+                    <Button variant="outline" @click="limpiar">Limpiar</Button>
+                </div>
+            </div>
+
             <div
                 class="overflow-x-auto rounded-xl border border-sidebar-border/70 dark:border-sidebar-border"
             >

@@ -41,22 +41,24 @@ props.roles.forEach((rol) => {
     seleccion[rol.id] = new Set(props.asignaciones[rol.id] ?? []);
 });
 
-// Acciones que dependen de "ver": tenerlas implica tener "listar" del mismo modulo (no se puede
-// editar ni reportar sin ver). Incluye la escritura y "reportar".
-const DEPENDEN_DE_LISTAR = ['registrar', 'modificar', 'eliminar', 'reportar'];
+// Acción "base" de acceso a un módulo (ver la lista/pantalla): 'listar' en los CRUD admin, 'ver' en
+// dashboard/mis_compras/mis_pagos. Tener cualquier acción DEPENDIENTE implica tener la base; quitar la
+// base quita las dependientes. Ej: en mis_pagos, "realizar pago" (pagar) requiere "ver".
+const ACCIONES_BASE = ['listar', 'ver'];
+const DEPENDIENTES = ['registrar', 'modificar', 'eliminar', 'reportar', 'pagar'];
 
-// Lookups para resolver la dependencia "=> ver (listar)" al togglear un checkbox.
+// Lookups para resolver la dependencia "=> base (ver/listar)" al togglear un checkbox.
 const infoAccion = new Map<number, { moduloId: number; clave: string }>();
-const listarDeModulo = new Map<number, number>(); // moduloId => accion "listar"
-const dependientesDeModulo = new Map<number, number[]>(); // moduloId => [acciones que requieren listar]
+const baseDeModulo = new Map<number, number>(); // moduloId => accion base (listar|ver)
+const dependientesDeModulo = new Map<number, number[]>(); // moduloId => [acciones que requieren la base]
 props.modulos.forEach((modulo) => {
     const dependientes: number[] = [];
     modulo.acciones.forEach((accion) => {
         infoAccion.set(accion.id, { moduloId: modulo.id, clave: accion.clave });
-        if (accion.clave === 'listar') {
-            listarDeModulo.set(modulo.id, accion.id);
+        if (ACCIONES_BASE.includes(accion.clave)) {
+            baseDeModulo.set(modulo.id, accion.id);
         }
-        if (DEPENDEN_DE_LISTAR.includes(accion.clave)) {
+        if (DEPENDIENTES.includes(accion.clave)) {
             dependientes.push(accion.id);
         }
     });
@@ -77,17 +79,17 @@ function alternar(
 
     if (valor === true) {
         set.add(accionId);
-        // Habilitar una accion que depende de ver (escritura/reportar) implica habilitar "listar".
-        if (info && DEPENDEN_DE_LISTAR.includes(info.clave)) {
-            const listarId = listarDeModulo.get(info.moduloId);
-            if (listarId !== undefined) {
-                set.add(listarId);
+        // Habilitar una accion dependiente (escritura/reportar/pagar) implica habilitar la base (ver/listar).
+        if (info && DEPENDIENTES.includes(info.clave)) {
+            const baseId = baseDeModulo.get(info.moduloId);
+            if (baseId !== undefined) {
+                set.add(baseId);
             }
         }
     } else {
         set.delete(accionId);
-        // Quitar "ver" (listar) implica quitar las acciones que dependen de ver del modulo.
-        if (info && info.clave === 'listar') {
+        // Quitar la base (ver/listar) implica quitar las acciones que dependen de ella en el modulo.
+        if (info && ACCIONES_BASE.includes(info.clave)) {
             dependientesDeModulo
                 .get(info.moduloId)
                 ?.forEach((id) => set.delete(id));

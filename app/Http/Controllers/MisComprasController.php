@@ -17,7 +17,14 @@ class MisComprasController extends Controller
 {
     public function index(Request $request): Response
     {
+        $filtros = [
+            'desde' => $request->date('desde')?->toDateString(),
+            'hasta' => $request->date('hasta')?->toDateString(),
+        ];
+
         $compras = $request->user()->ventas()
+            ->when($filtros['desde'], fn ($q, $d) => $q->whereDate('fecha_venta', '>=', $d))
+            ->when($filtros['hasta'], fn ($q, $h) => $q->whereDate('fecha_venta', '<=', $h))
             ->withCount('detalles')
             ->orderByDesc('fecha_venta')
             ->orderByDesc('id')
@@ -35,6 +42,7 @@ class MisComprasController extends Controller
 
         return Inertia::render('mis-compras/Index', [
             'compras' => $compras,
+            'filtros' => $filtros,
         ]);
     }
 
