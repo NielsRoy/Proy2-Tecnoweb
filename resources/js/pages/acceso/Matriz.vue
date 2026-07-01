@@ -42,10 +42,11 @@ props.roles.forEach((rol) => {
 });
 
 // Acción "base" de acceso a un módulo (ver la lista/pantalla): 'listar' en los CRUD admin, 'ver' en
-// dashboard/mis_compras/mis_pagos. Tener cualquier acción DEPENDIENTE implica tener la base; quitar la
-// base quita las dependientes. Ej: en mis_pagos, "realizar pago" (pagar) requiere "ver".
+// dashboard/mis_compras/mis_pagos. Regla genérica: TODA acción que NO sea base depende de la base
+// (registrar/modificar/eliminar/reportar/pagar y los gráficos del Dashboard). Tener cualquier dependiente
+// implica tener la base; quitar la base quita las dependientes.
 const ACCIONES_BASE = ['listar', 'ver'];
-const DEPENDIENTES = ['registrar', 'modificar', 'eliminar', 'reportar', 'pagar'];
+const esBase = (clave: string): boolean => ACCIONES_BASE.includes(clave);
 
 // Lookups para resolver la dependencia "=> base (ver/listar)" al togglear un checkbox.
 const infoAccion = new Map<number, { moduloId: number; clave: string }>();
@@ -55,10 +56,9 @@ props.modulos.forEach((modulo) => {
     const dependientes: number[] = [];
     modulo.acciones.forEach((accion) => {
         infoAccion.set(accion.id, { moduloId: modulo.id, clave: accion.clave });
-        if (ACCIONES_BASE.includes(accion.clave)) {
+        if (esBase(accion.clave)) {
             baseDeModulo.set(modulo.id, accion.id);
-        }
-        if (DEPENDIENTES.includes(accion.clave)) {
+        } else {
             dependientes.push(accion.id);
         }
     });
@@ -79,8 +79,8 @@ function alternar(
 
     if (valor === true) {
         set.add(accionId);
-        // Habilitar una accion dependiente (escritura/reportar/pagar) implica habilitar la base (ver/listar).
-        if (info && DEPENDIENTES.includes(info.clave)) {
+        // Habilitar una accion dependiente (escritura/reportar/pagar/gráfico) implica habilitar la base.
+        if (info && !esBase(info.clave)) {
             const baseId = baseDeModulo.get(info.moduloId);
             if (baseId !== undefined) {
                 set.add(baseId);
@@ -89,7 +89,7 @@ function alternar(
     } else {
         set.delete(accionId);
         // Quitar la base (ver/listar) implica quitar las acciones que dependen de ella en el modulo.
-        if (info && ACCIONES_BASE.includes(info.clave)) {
+        if (info && esBase(info.clave)) {
             dependientesDeModulo
                 .get(info.moduloId)
                 ?.forEach((id) => set.delete(id));

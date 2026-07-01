@@ -98,10 +98,10 @@ class AccesoController extends Controller
     }
 
     /**
-     * Garantiza coherencia: si un rol tiene una accion DEPENDIENTE (escritura registrar/modificar/
-     * eliminar, "reportar" o "pagar") en un modulo, debe tener tambien su accion BASE de acceso
-     * ('listar' en los CRUD admin, 'ver' en dashboard/mis_compras/mis_pagos). No se puede editar,
-     * reportar ni pagar sin ver. Es la misma regla que aplica el front.
+     * Garantiza coherencia: TODA accion que NO sea la BASE de acceso ('listar' en los CRUD admin,
+     * 'ver' en dashboard/mis_compras/mis_pagos) DEPENDE de esa base. Es decir: no se puede registrar,
+     * modificar, eliminar, reportar, pagar NI ver un grafico sin tener el "ver/listar" del modulo. Regla
+     * generica (cubre las acciones de grafico del Dashboard sin listarlas). La misma que aplica el front.
      *
      * @param  array<int, int>  $accionIds
      * @return array<int, int>
@@ -115,7 +115,7 @@ class AccesoController extends Controller
         $seleccionadas = Accion::whereIn('id', $accionIds)->get(['id', 'modulo_id', 'clave']);
 
         $modulosConDependiente = $seleccionadas
-            ->whereIn('clave', ['registrar', 'modificar', 'eliminar', 'reportar', 'pagar'])
+            ->whereNotIn('clave', ['listar', 'ver'])
             ->pluck('modulo_id')->unique();
 
         $ids = collect($accionIds);

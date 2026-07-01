@@ -5,6 +5,7 @@ use App\Http\Controllers\BitacoraController;
 use App\Http\Controllers\CarritoController;
 use App\Http\Controllers\CategoriaController;
 use App\Http\Controllers\CompraController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InventarioController;
 use App\Http\Controllers\MisComprasController;
 use App\Http\Controllers\MisPagosController;
@@ -47,7 +48,7 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::inertia('dashboard', 'Dashboard')
+    Route::get('dashboard', [DashboardController::class, 'index'])
         ->middleware('permiso:dashboard,ver')
         ->name('dashboard');
 

@@ -22,6 +22,19 @@ class ModuloSeeder extends Seeder
         // muestren los botones de exportar (los filtros siguen apareciendo con solo "listar").
         $reportar = ['reportar' => 'Generar reportes'];
 
+        // Acciones del Dashboard: cada GRAFICO (CU8) es una accion propia -> solo se ve con su permiso.
+        // 'ver' es la accion base (acceder al Dashboard); los graf_* dependen de 'ver' (ver la matriz).
+        $graficos = [
+            'graf_productos' => 'Gráfico: productos más vendidos',
+            'graf_ingresos' => 'Gráfico: ingresos por mes',
+            'graf_metodo_pago' => 'Gráfico: pagos por método',
+            'graf_tipo_pago' => 'Gráfico: ventas por tipo de pago',
+            'graf_clientes' => 'Gráfico: top clientes',
+            'graf_proveedores' => 'Gráfico: top proveedores',
+            'graf_stock' => 'Gráfico: productos con bajo stock',
+            'graf_promociones' => 'Gráfico: top promociones',
+        ];
+
         // Cada modulo = un item del menu. `icono` = nombre de icono lucide (lo mapea el front).
         // `ruta` = nombre de ruta Laravel (se resuelve a URL respetando el subdirectorio).
         // Las `acciones` deben COINCIDIR con las rutas reales de cada controlador (lo que el
@@ -29,7 +42,7 @@ class ModuloSeeder extends Seeder
         // compras/ventas no se modifican (se anulan -> "eliminar"); inventarios es append-only
         // (solo listar/registrar); pagos solo lista y cobra (registrar).
         $modulos = [
-            ['clave' => 'dashboard', 'nombre' => 'Dashboard', 'icono' => 'LayoutGrid', 'ruta' => 'dashboard', 'orden' => 1, 'acciones' => ['ver' => 'Ver']],
+            ['clave' => 'dashboard', 'nombre' => 'Dashboard', 'icono' => 'LayoutGrid', 'ruta' => 'dashboard', 'orden' => 1, 'acciones' => ['ver' => 'Ver'] + $graficos],
             ['clave' => 'usuarios', 'nombre' => 'Usuarios', 'icono' => 'Users', 'ruta' => 'usuarios.index', 'orden' => 2, 'acciones' => $crud + $reportar],
             ['clave' => 'productos', 'nombre' => 'Productos', 'icono' => 'Package', 'ruta' => 'productos.index', 'orden' => 3, 'acciones' => $crud + $reportar],
             ['clave' => 'categorias', 'nombre' => 'Categorías', 'icono' => 'Tags', 'ruta' => 'categorias.index', 'orden' => 4, 'acciones' => $crud],
@@ -38,13 +51,12 @@ class ModuloSeeder extends Seeder
             ['clave' => 'inventarios', 'nombre' => 'Inventarios', 'icono' => 'Boxes', 'ruta' => 'inventarios.index', 'orden' => 7, 'acciones' => ['listar' => 'Listar', 'registrar' => 'Registrar'] + $reportar],
             ['clave' => 'promociones', 'nombre' => 'Promociones', 'icono' => 'BadgePercent', 'ruta' => 'promociones.index', 'orden' => 8, 'acciones' => $crud + $reportar],
             ['clave' => 'pagos', 'nombre' => 'Pagos', 'icono' => 'CreditCard', 'ruta' => 'pagos.index', 'orden' => 9, 'acciones' => ['listar' => 'Listar', 'registrar' => 'Registrar'] + $reportar],
-            ['clave' => 'reportes', 'nombre' => 'Reportes', 'icono' => 'ChartColumn', 'ruta' => 'reportes.index', 'orden' => 10, 'acciones' => ['listar' => 'Ver reportes']],
-            ['clave' => 'bitacora', 'nombre' => 'Bitácora', 'icono' => 'ScrollText', 'ruta' => 'bitacora.index', 'orden' => 11, 'acciones' => ['listar' => 'Ver bitácora'] + $reportar],
-            ['clave' => 'acceso', 'nombre' => 'Control de Acceso', 'icono' => 'ShieldCheck', 'ruta' => 'acceso.matriz', 'orden' => 12, 'acciones' => ['listar' => 'Ver matriz', 'modificar' => 'Editar matriz']],
+            ['clave' => 'bitacora', 'nombre' => 'Bitácora', 'icono' => 'ScrollText', 'ruta' => 'bitacora.index', 'orden' => 10, 'acciones' => ['listar' => 'Ver bitácora'] + $reportar],
+            ['clave' => 'acceso', 'nombre' => 'Control de Acceso', 'icono' => 'ShieldCheck', 'ruta' => 'acceso.matriz', 'orden' => 11, 'acciones' => ['listar' => 'Ver matriz', 'modificar' => 'Editar matriz']],
             // Modulos de la perspectiva CLIENTE (autoservicio). Se muestran en el sidebar en una seccion
             // aparte ("Mi cuenta"); igual son gestionables por la matriz.
-            ['clave' => 'mis_compras', 'nombre' => 'Mis compras', 'icono' => 'Receipt', 'ruta' => 'mis-compras.index', 'orden' => 13, 'acciones' => ['ver' => 'Ver']],
-            ['clave' => 'mis_pagos', 'nombre' => 'Mis pagos', 'icono' => 'CreditCard', 'ruta' => 'mis-pagos.index', 'orden' => 14, 'acciones' => ['ver' => 'Ver', 'pagar' => 'Realizar pago']],
+            ['clave' => 'mis_compras', 'nombre' => 'Mis compras', 'icono' => 'Receipt', 'ruta' => 'mis-compras.index', 'orden' => 12, 'acciones' => ['ver' => 'Ver']],
+            ['clave' => 'mis_pagos', 'nombre' => 'Mis pagos', 'icono' => 'CreditCard', 'ruta' => 'mis-pagos.index', 'orden' => 13, 'acciones' => ['ver' => 'Ver', 'pagar' => 'Realizar pago']],
         ];
 
         foreach ($modulos as $m) {
@@ -64,5 +76,10 @@ class ModuloSeeder extends Seeder
                 );
             }
         }
+
+        // Poda de modulos OBSOLETOS (p. ej. el antiguo "reportes", ya inutil: cada modulo tiene su propia
+        // accion "reportar"). Borrar el modulo elimina en cascada sus `accion` y sus `rol_accion` (FK
+        // cascadeOnDelete). Deja la BD alineada con la lista declarada arriba.
+        Modulo::whereNotIn('clave', array_column($modulos, 'clave'))->delete();
     }
 }
