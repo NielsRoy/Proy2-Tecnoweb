@@ -42,6 +42,8 @@ Route::middleware('auth')->group(function () {
     Route::get('qr-venta', [PagoQrController::class, 'mostrarVenta'])->name('pagos.qr-venta');
     Route::post('qr-venta/generar', [PagoQrController::class, 'generarVenta'])->name('pagos.qr-venta.generar');
     Route::get('qr-venta/estado', [PagoQrController::class, 'estadoVenta'])->name('pagos.qr-venta.estado');
+    // Comprobante ("Pago confirmado") tras un pago NO-QR (datos por flash de sesion).
+    Route::get('comprobante', [PagoQrController::class, 'comprobante'])->name('pagos.comprobante');
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {

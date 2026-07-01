@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, router } from '@inertiajs/vue3';
-import { reactive, ref } from 'vue';
+import { computed, reactive, ref } from 'vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -63,10 +63,16 @@ function limpiar(): void {
     router.get(index().url, {}, { preserveScroll: true, replace: true });
 }
 
-// Cobro de una cuota.
+// Cobro de una cuota. El QR es una opción más del select (no un botón aparte): si se elige, se navega
+// a la página del QR; con los demás métodos se cobra al instante y se muestra el comprobante.
+const metodosConQr = computed(() => [...props.metodos, 'qr']);
 const cuotaACobrar = ref<CuotaItem | null>(null);
 const metodo = ref(props.metodos[0] ?? 'efectivo');
 const cobrando = ref(false);
+
+function etiquetaMetodo(m: string): string {
+    return m === 'qr' ? 'QR (PagoFacil)' : m.charAt(0).toUpperCase() + m.slice(1);
+}
 
 function abrirCobro(c: CuotaItem): void {
     cuotaACobrar.value = c;
@@ -74,11 +80,16 @@ function abrirCobro(c: CuotaItem): void {
 }
 
 function confirmarCobro(): void {
-    if (!cuotaACobrar.value) {
+    const c = cuotaACobrar.value;
+    if (!c) {
+        return;
+    }
+    if (metodo.value === 'qr') {
+        router.visit(c.qr_url);
         return;
     }
     router.put(
-        pagar(cuotaACobrar.value.id).url,
+        pagar(c.id).url,
         { metodo: metodo.value },
         {
             preserveScroll: true,
@@ -172,21 +183,13 @@ const selectClass =
                             </Badge>
                         </td>
                         <td v-if="puedeRegistrar" class="p-3 text-right">
-                            <div
+                            <Button
                                 v-if="c.es_proxima"
-                                class="flex justify-end gap-2"
+                                size="sm"
+                                @click="abrirCobro(c)"
                             >
-                                <Button size="sm" @click="abrirCobro(c)">
-                                    Registrar pago
-                                </Button>
-                                <Button
-                                    size="sm"
-                                    variant="outline"
-                                    @click="router.visit(c.qr_url)"
-                                >
-                                    Pagar con QR
-                                </Button>
-                            </div>
+                                Registrar pago
+                            </Button>
                             <span v-else class="text-xs text-muted-foreground">—</span>
                         </td>
                     </tr>
@@ -221,8 +224,8 @@ const selectClass =
             <div class="grid gap-2 py-2">
                 <Label for="metodo">Método de pago</Label>
                 <select id="metodo" v-model="metodo" :class="selectClass">
-                    <option v-for="m in metodos" :key="m" :value="m">
-                        {{ m.charAt(0).toUpperCase() + m.slice(1) }}
+                    <option v-for="m in metodosConQr" :key="m" :value="m">
+                        {{ etiquetaMetodo(m) }}
                     </option>
                 </select>
             </div>
@@ -231,7 +234,7 @@ const selectClass =
                     <Button variant="secondary">Cancelar</Button>
                 </DialogClose>
                 <Button :disabled="cobrando" @click="confirmarCobro">
-                    Confirmar pago
+                    {{ metodo === 'qr' ? 'Continuar al QR' : 'Confirmar pago' }}
                 </Button>
             </DialogFooter>
         </DialogContent>

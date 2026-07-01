@@ -1,18 +1,9 @@
 <script setup lang="ts">
 import { Head, router } from '@inertiajs/vue3';
-import { CheckCircle2, Loader2, TriangleAlert } from '@lucide/vue';
+import { Loader2, TriangleAlert } from '@lucide/vue';
 import { onBeforeUnmount, onMounted, ref } from 'vue';
+import PagoExitoso, { type PagoDetalle } from '@/components/PagoExitoso.vue';
 import { Button } from '@/components/ui/button';
-
-type PagoDetalle = {
-    metodo: string;
-    monto: string | null;
-    banco: string | null;
-    cuenta: string | null;
-    titular: string | null;
-    fecha: string | null;
-    hora: string | null;
-};
 
 const props = defineProps<{
     titulo: string;
@@ -160,7 +151,7 @@ onBeforeUnmount(limpiarTimers);
         </header>
 
         <div
-            class="flex w-full max-w-sm flex-col items-center gap-4 rounded-xl border border-sidebar-border/70 p-6 dark:border-sidebar-border"
+            class="flex w-full max-w-md flex-col items-center gap-4 rounded-xl border border-sidebar-border/70 p-6 dark:border-sidebar-border"
         >
             <!-- Generando -->
             <div
@@ -177,7 +168,7 @@ onBeforeUnmount(limpiarTimers);
                     v-if="qrBase64"
                     :src="'data:image/png;base64,' + qrBase64"
                     alt="Código QR de pago"
-                    class="size-64 rounded-lg bg-white p-2"
+                    class="size-80 rounded-lg bg-white p-3"
                 />
                 <div class="flex items-center gap-2 text-sm text-muted-foreground">
                     <Loader2 class="size-4 animate-spin" />
@@ -189,46 +180,12 @@ onBeforeUnmount(limpiarTimers);
                 </p>
             </template>
 
-            <!-- Pagado: datos del pago + botón Regresar -->
-            <div
-                v-else-if="estado === 'pagado'"
-                class="flex w-full flex-col items-center gap-4 py-4 text-center"
-            >
-                <CheckCircle2 class="size-12 text-green-600" />
-                <p class="text-lg font-semibold">¡Pago confirmado!</p>
-
-                <dl
-                    v-if="pago"
-                    class="w-full space-y-1.5 rounded-lg border border-sidebar-border/70 p-4 text-left text-sm dark:border-sidebar-border"
-                >
-                    <div class="flex justify-between gap-4">
-                        <dt class="text-muted-foreground">Monto</dt>
-                        <dd class="font-medium">Bs {{ pago.monto ?? monto }}</dd>
-                    </div>
-                    <div class="flex justify-between gap-4">
-                        <dt class="text-muted-foreground">Método</dt>
-                        <dd class="font-medium">{{ pago.metodo }}</dd>
-                    </div>
-                    <div v-if="pago.titular" class="flex justify-between gap-4">
-                        <dt class="text-muted-foreground">Pagador</dt>
-                        <dd class="font-medium">{{ pago.titular }}</dd>
-                    </div>
-                    <div v-if="pago.banco" class="flex justify-between gap-4">
-                        <dt class="text-muted-foreground">Banco</dt>
-                        <dd class="font-medium">{{ pago.banco }}</dd>
-                    </div>
-                    <div v-if="pago.cuenta" class="flex justify-between gap-4">
-                        <dt class="text-muted-foreground">Cuenta</dt>
-                        <dd class="font-medium">{{ pago.cuenta }}</dd>
-                    </div>
-                    <div v-if="pago.fecha" class="flex justify-between gap-4">
-                        <dt class="text-muted-foreground">Fecha y hora</dt>
-                        <dd class="font-medium">{{ pago.fecha }} {{ pago.hora }}</dd>
-                    </div>
-                </dl>
-
-                <Button class="w-full" @click="volver">Regresar</Button>
-            </div>
+            <!-- Pagado: datos del pago + botón Regresar (misma pantalla que el resto de métodos) -->
+            <PagoExitoso
+                v-else-if="estado === 'pagado' && pago"
+                :pago="pago"
+                :retorno-url="retornoUrl"
+            />
 
             <!-- Expirado -->
             <div

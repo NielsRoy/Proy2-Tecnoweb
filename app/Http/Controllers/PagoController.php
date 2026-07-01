@@ -95,8 +95,8 @@ class PagoController extends Controller
             );
         });
 
-        $this->toastExito('Pago registrado.');
+        $concepto = "Cuota {$pago->numero_cuota}/{$pago->venta?->numero_cuotas} de la venta #{$pago->venta_id}";
 
-        return redirect()->route('pagos.index');
+        return $this->comprobantePago($pago, $concepto, 'pagos.index');
     }
 }

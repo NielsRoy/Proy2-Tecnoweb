@@ -230,7 +230,15 @@ class VentaController extends Controller
 
         // Resto (contado por otros medios o credito): toda la logica de negocio vive en el servicio,
         // compartido con la tienda autoservicio.
-        $registrar->ejecutar($datos);
+        $venta = $registrar->ejecutar($datos);
+
+        // Contado no-QR: se pago al registrar -> comprobante. Credito: solo se registro el plan (toast).
+        if ($datos['tipo_pago'] === Venta::TIPO_CONTADO) {
+            $cuota = Pago::where('venta_id', $venta->id)->where('numero_cuota', 1)->first();
+            if ($cuota) {
+                return $this->comprobantePago($cuota, "Venta #{$venta->id}", 'ventas.index');
+            }
+        }
 
         $this->toastExito('Venta registrada.');
 

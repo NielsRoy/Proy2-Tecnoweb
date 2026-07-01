@@ -163,7 +163,7 @@ class CarritoController extends Controller
 
         // Resto (contado por otros medios o credito): RegistrarVenta valida stock/promo/credito/bloqueo
         // y lanza ValidationException si algo falla.
-        $registrar->ejecutar([
+        $venta = $registrar->ejecutar([
             'cliente_id' => $uid,
             'fecha_venta' => today()->toDateString(),
             'direccion_envio' => $datos['direccion_envio'],
@@ -175,6 +175,14 @@ class CarritoController extends Controller
 
         // Compra registrada: vaciar el carrito.
         Carrito::where('cliente_id', $uid)->delete();
+
+        // Contado no-QR: se pago al comprar -> comprobante. Credito: solo se registro el plan (toast).
+        if ($datos['tipo_pago'] === Venta::TIPO_CONTADO) {
+            $cuota = Pago::where('venta_id', $venta->id)->where('numero_cuota', 1)->first();
+            if ($cuota) {
+                return $this->comprobantePago($cuota, "Compra #{$venta->id}", 'inicio');
+            }
+        }
 
         $this->toastExito('¡Compra realizada con éxito!');
 

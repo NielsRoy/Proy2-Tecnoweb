@@ -126,6 +126,34 @@ class PagoQrController extends Controller
         return response()->json(['estado' => 'pagado', 'pago' => $this->detallesPago($tx, $pago->fresh())]);
     }
 
+    /**
+     * Pantalla de comprobante ("Pago confirmado") tras un pago por un metodo NO-QR (contado no-QR o
+     * cobro de cuota en efectivo/transferencia/tarjeta). Los datos llegan por flash de sesion
+     * (Controller::comprobantePago); si se entra sin ellos (recarga/URL directa), vuelve al inicio.
+     */
+    public function comprobante(Request $request): Response|RedirectResponse
+    {
+        $data = $request->session()->get('comprobante');
+
+        if (! $data) {
+            return redirect()->route('inicio');
+        }
+
+        return Inertia::render('pagos/Comprobante', [
+            'concepto' => $data['concepto'],
+            'pago' => [
+                'metodo' => $data['metodo'],
+                'monto' => $data['monto'],
+                'banco' => $data['banco'] ?? null,
+                'cuenta' => $data['cuenta'] ?? null,
+                'titular' => $data['titular'] ?? null,
+                'fecha' => $data['fecha'] ?? null,
+                'hora' => $data['hora'] ?? null,
+            ],
+            'retornoUrl' => Url::path($data['retorno']),
+        ]);
+    }
+
     // ─────────────────────────────────────────────────────────────────────────
     // Variante B: registro diferido de una venta al contado (no se registra hasta pagar)
     // ─────────────────────────────────────────────────────────────────────────

@@ -114,8 +114,8 @@ class MisPagosController extends Controller
             );
         });
 
-        $this->toastExito('¡Pago realizado con éxito!');
+        $concepto = "Cuota {$pago->numero_cuota}/{$pago->venta?->numero_cuotas} de la venta #{$pago->venta_id}";
 
-        return redirect()->route('mis-pagos.index');
+        return $this->comprobantePago($pago, $concepto, 'mis-pagos.index');
     }
 }
