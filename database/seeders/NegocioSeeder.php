@@ -16,6 +16,7 @@ use App\Services\RegistrarVenta;
 use App\Support\PlanPago;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 /**
  * Datos de ejemplo del negocio (catalogo de minimarket). Reusa los users demo de UsuarioRolSeeder
@@ -36,9 +37,12 @@ class NegocioSeeder extends Seeder
             ['Snacks', 'Galletas y picoteos', 4],
         ];
         foreach ($categorias as [$nombre, $descripcion, $orden]) {
+            // foto = ruta en el disco publico. El archivo (categorias/<slug>.jpg) lo pone el usuario en
+            // storage/app/public/categorias/ (ver ../imagenes_seeder.md). Se sirve en /storage via storage:link.
             Categoria::firstOrCreate(
                 ['nombre' => $nombre],
-                ['descripcion' => $descripcion, 'orden' => $orden, 'activo' => true],
+                ['descripcion' => $descripcion, 'orden' => $orden, 'activo' => true,
+                    'foto' => 'categorias/'.Str::slug($nombre).'.jpg'],
             );
         }
         $catId = fn (string $nombre) => Categoria::where('nombre', $nombre)->value('id');
@@ -67,10 +71,13 @@ class NegocioSeeder extends Seeder
             ['Harina 1kg', 'Harina de trigo, bolsa de 1 kg', 7.99, 'Abarrotes'],
         ];
         foreach ($productos as [$nombre, $descripcion, $precio, $categoria]) {
+            // foto = ruta en el disco publico. El archivo (productos/<slug>.jpg) lo pone el usuario en
+            // storage/app/public/productos/ (ver ../imagenes_seeder.md). Se sirve en /storage via storage:link.
             Producto::firstOrCreate(
                 ['nombre' => $nombre],
                 ['descripcion' => $descripcion, 'precio' => $precio, 'stock' => 0,
-                    'categoria_id' => $catId($categoria), 'activo' => true],
+                    'categoria_id' => $catId($categoria), 'activo' => true,
+                    'foto' => 'productos/'.Str::slug($nombre).'.jpg'],
             );
         }
 
