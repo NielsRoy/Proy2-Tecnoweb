@@ -12,6 +12,7 @@ use App\Models\Producto;
 use App\Models\Promocion;
 use App\Models\User;
 use App\Models\Venta;
+use App\Services\RegistrarVenta;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -168,6 +169,31 @@ class NegocioSeeder extends Seeder
                     'metodo' => 'efectivo', 'estado' => 'pagado',
                 ]);
             });
+        }
+
+        // Venta demo A CREDITO para el cliente, para poder observar "Mis pagos": deja un PLAN ACTIVO
+        // (cuotas pendientes, con la proxima cobrable) + una cuota ya pagada en el HISTORIAL. Se crea
+        // una sola vez (guarda por "el cliente aun no tiene una venta a credito"). Reusa el servicio
+        // RegistrarVenta (misma logica que la tienda/venta admin: stock, promo, credito, cronograma).
+        $aceite = Producto::where('nombre', 'Aceite de Girasol 5L')->first();
+        $sinCredito = $cliente && Venta::where('cliente_id', $cliente->id)
+            ->where('tipo_pago', 'credito')->doesntExist();
+
+        if ($sinCredito && $aceite && $aceite->stock >= 3) {
+            $ventaCredito = app(RegistrarVenta::class)->ejecutar([
+                'cliente_id' => $cliente->id,
+                'fecha_venta' => now()->toDateString(),
+                'direccion_envio' => 'Av. Cliente 123',
+                'tipo_pago' => 'credito',
+                'numero_cuotas' => 3, // monto base ~135 (aceite x3) -> tramo 100-299.99 admite hasta 3
+                'lineas' => [['producto_id' => $aceite->id, 'cantidad' => 3]],
+            ]);
+
+            // Pagar la 1a cuota para que quede historial + plan activo (cuotas 2 y 3 pendientes).
+            $primera = $ventaCredito->pagos()->orderBy('numero_cuota')->first();
+            if ($primera) {
+                DB::transaction(fn () => Pago::saldar($primera, Pago::METODO_EFECTIVO));
+            }
         }
     }
 }
