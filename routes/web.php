@@ -170,9 +170,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->middleware('permiso:ventas,eliminar')->name('destroy');
     });
 
-    // CU7 Pagos (modulo "pagos"): cobro de la proxima cuota pendiente de ventas a credito.
+    // CU7 Pagos (modulo "pagos"): listado de TODOS los pagos (filtrable) + cobro de la proxima cuota
+    // pendiente de ventas a credito + reporte (PDF/Excel/CSV) de la lista filtrada.
     Route::get('pagos', [PagoController::class, 'index'])
         ->middleware('permiso:pagos,listar')->name('pagos.index');
+    Route::get('pagos/reporte', [PagoController::class, 'reporte'])
+        ->middleware('permiso:pagos,reportar')->name('pagos.reporte');
     Route::put('pagos/{pago}', [PagoController::class, 'pagar'])
         ->middleware('permiso:pagos,registrar')->name('pagos.pagar');
 

@@ -37,7 +37,7 @@ class ModuloSeeder extends Seeder
             ['clave' => 'ventas', 'nombre' => 'Ventas', 'icono' => 'Receipt', 'ruta' => 'ventas.index', 'orden' => 6, 'acciones' => ['listar' => 'Listar', 'registrar' => 'Registrar', 'eliminar' => 'Anular'] + $reportar],
             ['clave' => 'inventarios', 'nombre' => 'Inventarios', 'icono' => 'Boxes', 'ruta' => 'inventarios.index', 'orden' => 7, 'acciones' => ['listar' => 'Listar', 'registrar' => 'Registrar'] + $reportar],
             ['clave' => 'promociones', 'nombre' => 'Promociones', 'icono' => 'BadgePercent', 'ruta' => 'promociones.index', 'orden' => 8, 'acciones' => $crud + $reportar],
-            ['clave' => 'pagos', 'nombre' => 'Pagos', 'icono' => 'CreditCard', 'ruta' => 'pagos.index', 'orden' => 9, 'acciones' => ['listar' => 'Listar', 'registrar' => 'Registrar']],
+            ['clave' => 'pagos', 'nombre' => 'Pagos', 'icono' => 'CreditCard', 'ruta' => 'pagos.index', 'orden' => 9, 'acciones' => ['listar' => 'Listar', 'registrar' => 'Registrar'] + $reportar],
             ['clave' => 'reportes', 'nombre' => 'Reportes', 'icono' => 'ChartColumn', 'ruta' => 'reportes.index', 'orden' => 10, 'acciones' => ['listar' => 'Ver reportes']],
             ['clave' => 'bitacora', 'nombre' => 'Bitácora', 'icono' => 'ScrollText', 'ruta' => 'bitacora.index', 'orden' => 11, 'acciones' => ['listar' => 'Ver bitácora'] + $reportar],
             ['clave' => 'acceso', 'nombre' => 'Control de Acceso', 'icono' => 'ShieldCheck', 'ruta' => 'acceso.matriz', 'orden' => 12, 'acciones' => ['listar' => 'Ver matriz', 'modificar' => 'Editar matriz']],

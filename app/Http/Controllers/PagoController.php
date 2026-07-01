@@ -6,7 +6,9 @@ use App\Models\Bitacora;
 use App\Models\Pago;
 use App\Models\User;
 use App\Models\Venta;
+use App\Support\Reporte;
 use App\Support\Url;
+use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -15,11 +17,10 @@ use Inertia\Inertia;
 use Inertia\Response;
 
 /**
- * CU7 Pagos (modulo "pagos") — VISTA ADMIN. Cobro de las cuotas PENDIENTES de las ventas a credito.
- * Solo se puede cobrar la PROXIMA cuota de cada venta (la de menor numero_cuota pendiente); el monto
- * es fijo (sin pago parcial). Las ventas al contado ya se pagan al registrarse, asi que aqui solo
- * aparecen las cuotas a credito. Reusa Pago::saldar (marca pagada y, si era la ultima, deja la venta
- * 'pagada'). El pago por QR (#10) queda pendiente: metodos disponibles efectivo/transferencia/tarjeta.
+ * CU7 Pagos (modulo "pagos") — VISTA ADMIN. Lista TODOS los pagos (cuotas) del sistema con filtros
+ * (cliente, metodo, estado, rango de vencimiento y de fecha de pago) y permite COBRAR la proxima cuota
+ * pendiente de cada venta a credito (la de menor numero_cuota; monto fijo, sin pago parcial). Reusa
+ * Pago::saldar. Genera reportes (PDF/Excel/CSV) de la lista filtrada.
  */
 class PagoController extends Controller
 {
@@ -27,40 +28,136 @@ class PagoController extends Controller
 
     public function index(Request $request): Response
     {
-        $clienteId = $request->integer('cliente_id') ?: null;
+        [$filtros, $query] = $this->consultaFiltrada($request);
 
-        $pendientes = Pago::with('venta.cliente:id,name')
+        $pagos = $query->paginate(20)->withQueryString();
+
+        // La proxima cuota cobrable de cada venta = la de menor numero_cuota pendiente. Se calcula solo
+        // para las ventas visibles en la pagina actual (para marcar cual tiene el boton "Registrar pago").
+        $ventaIds = collect($pagos->items())->pluck('venta_id')->unique()->all();
+        $minPendiente = Pago::whereIn('venta_id', $ventaIds)
             ->where('estado', Pago::ESTADO_PENDIENTE)
-            ->whereHas('venta', fn ($q) => $q->where('estado', '!=', Venta::ESTADO_ANULADA))
-            ->when($clienteId, fn ($q, $id) => $q->whereHas('venta', fn ($qq) => $qq->where('cliente_id', $id)))
-            ->orderBy('fecha_vencimiento')
-            ->orderBy('numero_cuota')
-            ->get();
+            ->selectRaw('venta_id, MIN(numero_cuota) as min_cuota')
+            ->groupBy('venta_id')
+            ->pluck('min_cuota', 'venta_id');
 
-        // La proxima cuota de cada venta = la de menor numero_cuota pendiente (la unica cobrable).
-        $minPorVenta = $pendientes->groupBy('venta_id')->map(fn ($g) => $g->min('numero_cuota'));
-
-        $cuotas = $pendientes->map(fn (Pago $p) => [
+        $pagos->through(fn (Pago $p) => [
             'id' => $p->id,
             'venta_id' => $p->venta_id,
             'cliente' => $p->venta?->cliente?->name,
             'numero_cuota' => $p->numero_cuota,
             'total_cuotas' => $p->venta?->numero_cuotas,
             'monto' => $p->monto,
+            'metodo' => $p->metodo,
             'fecha_vencimiento' => $p->fecha_vencimiento?->toDateString(),
-            'es_proxima' => $p->numero_cuota === $minPorVenta->get($p->venta_id),
-            // URL del flujo de pago por QR (Url::path conserva el subdirectorio en produccion);
-            // al confirmar el pago vuelve a este index.
+            'fecha_pago' => $p->fecha_pago?->format('d/m/Y H:i'),
+            'estado' => $p->estado,
+            'es_proxima' => $p->estado === Pago::ESTADO_PENDIENTE
+                && $p->numero_cuota === $minPendiente->get($p->venta_id),
+            // URL del flujo de pago por QR (Url::path conserva el subdirectorio); vuelve a este index.
             'qr_url' => Url::path('pagos.qr', ['pago' => $p->id, 'retorno' => 'pagos.index']),
-        ])->values();
+        ]);
 
         return Inertia::render('pagos/Index', [
-            'cuotas' => $cuotas,
+            'pagos' => $pagos,
             'clientes' => User::conRolVigente('Cliente')->orderBy('name')->get(['id', 'name']),
-            'filtros' => ['cliente_id' => $clienteId],
+            'filtros' => $filtros,
             'metodos' => self::METODOS,
             'puedeRegistrar' => $request->user()->tienePermiso('pagos', 'registrar'),
+            'puedeReportar' => $request->user()->tienePermiso('pagos', 'reportar'),
         ]);
+    }
+
+    /** Reporte (PDF/Excel/CSV) de la lista de pagos filtrada. Ruta con permiso:pagos,reportar. */
+    public function reporte(Request $request): mixed
+    {
+        [$filtros, $query] = $this->consultaFiltrada($request);
+        $pagos = $query->get();
+
+        $columnas = ['Cliente', 'Venta', 'Cuota', 'Monto (Bs)', 'Método', 'Vence', 'Fecha de pago', 'Estado'];
+        $filas = $pagos->map(fn (Pago $p) => [
+            $p->venta?->cliente?->name,
+            '#'.$p->venta_id,
+            $p->numero_cuota.'/'.($p->venta?->numero_cuotas ?? '—'),
+            number_format((float) $p->monto, 2, '.', ''),
+            $p->metodo ? ucfirst($p->metodo) : '—',
+            $p->fecha_vencimiento?->format('d/m/Y'),
+            $p->fecha_pago?->format('d/m/Y H:i') ?? '—',
+            $p->estado === Pago::ESTADO_PAGADO ? 'Pagado' : 'Pendiente',
+        ])->all();
+        $sumaTotal = number_format((float) $pagos->sum('monto'), 2, '.', '');
+
+        return Reporte::generar($request->string('formato')->toString(), [
+            'titulo' => 'Reporte de Pagos',
+            'subtitulo' => $this->descripcionFiltros($filtros),
+            'columnas' => $columnas,
+            'filas' => $filas,
+            'filaTotal' => ['TOTAL', '', '', $sumaTotal, '', '', '', ''],
+        ], 'pagos');
+    }
+
+    /**
+     * Consulta de pagos aplicando filtros (cliente/metodo/estado/rango de vencimiento/rango de fecha de
+     * pago). Compartida por index() y reporte(). Excluye las cuotas de ventas anuladas.
+     *
+     * @return array{0: array<string, mixed>, 1: Builder}
+     */
+    private function consultaFiltrada(Request $request): array
+    {
+        $filtros = [
+            'cliente_id' => $request->integer('cliente_id') ?: null,
+            'metodo' => $request->string('metodo')->toString() ?: null,
+            'estado' => $request->string('estado')->toString() ?: null,
+            'venc_desde' => $request->date('venc_desde')?->toDateString(),
+            'venc_hasta' => $request->date('venc_hasta')?->toDateString(),
+            'pago_desde' => $request->date('pago_desde')?->toDateString(),
+            'pago_hasta' => $request->date('pago_hasta')?->toDateString(),
+        ];
+
+        $query = Pago::query()
+            ->with('venta.cliente:id,name')
+            ->whereHas('venta', fn ($q) => $q->where('estado', '!=', Venta::ESTADO_ANULADA))
+            ->when($filtros['cliente_id'], fn ($q, $id) => $q->whereHas('venta', fn ($qq) => $qq->where('cliente_id', $id)))
+            ->when($filtros['metodo'], fn ($q, $m) => $q->where('metodo', $m))
+            ->when($filtros['estado'], fn ($q, $e) => $q->where('estado', $e))
+            ->when($filtros['venc_desde'], fn ($q, $d) => $q->whereDate('fecha_vencimiento', '>=', $d))
+            ->when($filtros['venc_hasta'], fn ($q, $h) => $q->whereDate('fecha_vencimiento', '<=', $h))
+            ->when($filtros['pago_desde'], fn ($q, $d) => $q->whereDate('fecha_pago', '>=', $d))
+            ->when($filtros['pago_hasta'], fn ($q, $h) => $q->whereDate('fecha_pago', '<=', $h))
+            ->orderByDesc('fecha_vencimiento')
+            ->orderByDesc('id');
+
+        return [$filtros, $query];
+    }
+
+    /** Texto legible de los filtros aplicados (para el subtitulo del reporte). */
+    private function descripcionFiltros(array $f): string
+    {
+        $partes = [];
+        if ($f['cliente_id']) {
+            $partes[] = 'Cliente: '.(User::find($f['cliente_id'])?->name ?? $f['cliente_id']);
+        }
+        if ($f['metodo']) {
+            $partes[] = 'Método: '.ucfirst($f['metodo']);
+        }
+        if ($f['estado']) {
+            $partes[] = 'Estado: '.ucfirst($f['estado']);
+        }
+        if ($f['venc_desde']) {
+            $partes[] = 'Vence desde: '.$f['venc_desde'];
+        }
+        if ($f['venc_hasta']) {
+            $partes[] = 'Vence hasta: '.$f['venc_hasta'];
+        }
+        if ($f['pago_desde']) {
+            $partes[] = 'Pagado desde: '.$f['pago_desde'];
+        }
+        if ($f['pago_hasta']) {
+            $partes[] = 'Pagado hasta: '.$f['pago_hasta'];
+        }
+        $txt = $partes ? implode(' · ', $partes) : 'Sin filtros (todos los pagos)';
+
+        return $txt.' — Generado: '.now()->format('d/m/Y H:i');
     }
 
     /**

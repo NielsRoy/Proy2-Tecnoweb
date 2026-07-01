@@ -14,9 +14,14 @@ use Illuminate\Support\Collection;
  */
 class RolAccionSeeder extends Seeder
 {
+    // Modulos que el super-rol (Propietario, '*') NO recibe por defecto: la perspectiva CLIENTE
+    // (autoservicio) no aplica al Propietario, que es back-office. Se pueden conceder luego en la matriz.
+    private const EXCLUIDOS_SUPER = ['mis_compras', 'mis_pagos'];
+
     public function run(): void
     {
-        // Mapa rol -> (modulo.clave => [accion.clave, ...]).  '*' = todas las acciones.
+        // Mapa rol -> (modulo.clave => [accion.clave, ...]).  '*' = todas las acciones (con excepciones,
+        // ver EXCLUIDOS_SUPER: el Propietario es back-office, no usa la perspectiva cliente).
         $matriz = [
             'Propietario' => '*',
             'Vendedor' => [
@@ -26,14 +31,14 @@ class RolAccionSeeder extends Seeder
                 'ventas' => ['listar', 'registrar', 'reportar'],
                 'inventarios' => ['listar', 'reportar'],
                 'promociones' => ['listar', 'reportar'],
-                'pagos' => ['listar', 'registrar'],
+                'pagos' => ['listar', 'registrar', 'reportar'],
                 'mis_compras' => ['ver'],
                 'mis_pagos' => ['ver', 'pagar'],
             ],
             'Cliente' => [
-                'productos' => ['listar', 'reportar'],
+                'productos' => ['listar'],
                 'categorias' => ['listar'],
-                'promociones' => ['listar', 'reportar'],
+                'promociones' => ['listar'],
                 'mis_compras' => ['ver'],
                 'mis_pagos' => ['ver', 'pagar'],
             ],
@@ -55,7 +60,7 @@ class RolAccionSeeder extends Seeder
             }
 
             $accionIds = $permisos === '*'
-                ? Accion::pluck('id')
+                ? Accion::whereHas('modulo', fn ($q) => $q->whereNotIn('clave', self::EXCLUIDOS_SUPER))->pluck('id')
                 : $this->resolverAccionIds($permisos);
 
             // sync() reemplaza la matriz del rol por completo -> idempotente.
