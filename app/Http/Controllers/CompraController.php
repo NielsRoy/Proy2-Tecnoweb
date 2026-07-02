@@ -7,6 +7,7 @@ use App\Models\Compra;
 use App\Models\Inventario;
 use App\Models\Producto;
 use App\Models\User;
+use App\Support\BusquedaTabla;
 use App\Support\Reporte;
 use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -91,6 +92,7 @@ class CompraController extends Controller
     private function consultaFiltrada(Request $request): array
     {
         $filtros = [
+            'q' => $request->string('q')->toString() ?: null,
             'proveedor_id' => $request->integer('proveedor_id') ?: null,
             'estado' => $request->string('estado')->toString() ?: null,
             'desde' => $request->date('desde')?->toDateString(),
@@ -100,6 +102,7 @@ class CompraController extends Controller
         $query = Compra::query()
             ->with('proveedor:id,name')
             ->withCount('detalles')
+            ->when($filtros['q'], fn ($q, $t) => BusquedaTabla::aplicar($q, $t, [], ['proveedor' => ['name']]))
             ->when($filtros['proveedor_id'], fn ($q, $id) => $q->where('proveedor_id', $id))
             ->when($filtros['estado'], fn ($q, $e) => $q->where('estado', $e))
             ->when($filtros['desde'], fn ($q, $d) => $q->whereDate('fecha_compra', '>=', $d))

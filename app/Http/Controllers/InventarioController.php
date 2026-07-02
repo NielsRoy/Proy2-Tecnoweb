@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Bitacora;
 use App\Models\Inventario;
 use App\Models\Producto;
+use App\Support\BusquedaTabla;
 use App\Support\Reporte;
 use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -42,7 +43,6 @@ class InventarioController extends Controller
         return Inertia::render('inventarios/Index', [
             'movimientos' => $movimientos,
             'filtros' => $filtros,
-            'productos' => Producto::where('activo', true)->orderBy('nombre')->get(['id', 'nombre']),
             'puedeCrear' => $request->user()->tienePermiso('inventarios', 'registrar'),
             'puedeReportar' => $request->user()->tienePermiso('inventarios', 'reportar'),
         ]);
@@ -80,7 +80,7 @@ class InventarioController extends Controller
     private function consultaFiltrada(Request $request): array
     {
         $filtros = [
-            'producto_id' => $request->integer('producto_id') ?: null,
+            'q' => $request->string('q')->toString() ?: null,
             'tipo_movimiento' => $request->string('tipo_movimiento')->toString() ?: null,
             'motivo' => $request->string('motivo')->toString() ?: null,
             'desde' => $request->date('desde')?->toDateString(),
@@ -89,7 +89,7 @@ class InventarioController extends Controller
 
         $query = Inventario::query()
             ->with('producto:id,nombre')
-            ->when($filtros['producto_id'], fn ($q, $id) => $q->where('producto_id', $id))
+            ->when($filtros['q'], fn ($q, $t) => BusquedaTabla::aplicar($q, $t, [], ['producto' => ['nombre']]))
             ->when($filtros['tipo_movimiento'], fn ($q, $t) => $q->where('tipo_movimiento', $t))
             ->when($filtros['motivo'], fn ($q, $m) => $q->where('motivo', $m))
             ->when($filtros['desde'], fn ($q, $d) => $q->whereDate('fecha_movimiento', '>=', $d))
@@ -104,8 +104,8 @@ class InventarioController extends Controller
     private function descripcionFiltros(array $f): string
     {
         $partes = [];
-        if ($f['producto_id']) {
-            $partes[] = 'Producto: '.(Producto::find($f['producto_id'])?->nombre ?? $f['producto_id']);
+        if ($f['q']) {
+            $partes[] = 'Búsqueda: «'.$f['q'].'»';
         }
         if ($f['tipo_movimiento']) {
             $partes[] = 'Tipo: '.ucfirst($f['tipo_movimiento']);

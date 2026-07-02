@@ -6,6 +6,7 @@ use App\Models\Carrito;
 use App\Models\Categoria;
 use App\Models\Producto;
 use App\Models\Promocion;
+use App\Support\BusquedaTabla;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -22,6 +23,8 @@ class TiendaController extends Controller
     {
         // Filtro por categoria via query param (?categoria=ID) -> NO crea URLs nuevas (sigue siendo /inicio).
         $categoriaId = $request->integer('categoria') ?: null;
+        // Búsqueda de texto (buscador global): filtra productos por nombre/descripción. Se combina con la categoría.
+        $q = $request->string('q')->toString() ?: null;
 
         // Categorias activas con productos visibles (para los botones de filtro y el banner activo).
         $categorias = Categoria::where('activo', true)
@@ -41,7 +44,8 @@ class TiendaController extends Controller
         $promosVigentes = Promocion::vigente()->get()->keyBy('producto_id');
 
         $productos = Producto::where('activo', true)
-            ->when($categoriaActiva, fn ($q, $id) => $q->where('categoria_id', $id))
+            ->when($categoriaActiva, fn ($query, $id) => $query->where('categoria_id', $id))
+            ->when($q, fn ($query, $t) => BusquedaTabla::aplicar($query, $t, ['nombre', 'descripcion']))
             ->orderBy('nombre')->get()
             ->map(function (Producto $p) use ($promosVigentes) {
                 $promo = $promosVigentes->get($p->id);
@@ -68,6 +72,8 @@ class TiendaController extends Controller
             'carritoCount' => $carritoCount,
             'categorias' => $categorias,
             'categoriaActiva' => $categoriaActiva,
+            // El buscador global detecta soporte de filtro por la clave `q` en `filtros`.
+            'filtros' => ['q' => $q],
         ]);
     }
 }

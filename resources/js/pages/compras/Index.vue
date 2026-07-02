@@ -38,6 +38,7 @@ type Paginado = {
 };
 
 type Filtros = {
+    q: string | null;
     proveedor_id: number | null;
     estado: string | null;
     desde: string | null;
@@ -76,6 +77,10 @@ function queryFiltros(): Record<string, string> {
             query[clave] = String(valor);
         }
     });
+    // Preserva el término del buscador global (filtro `q`) al filtrar o generar reportes.
+    if (props.filtros.q) {
+        query.q = props.filtros.q;
+    }
     return query;
 }
 

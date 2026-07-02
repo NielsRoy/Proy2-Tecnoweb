@@ -29,7 +29,7 @@ type Paginado = {
 };
 
 type Filtros = {
-    producto_id: number | null;
+    q: string | null;
     tipo_movimiento: string | null;
     motivo: string | null;
     desde: string | null;
@@ -39,7 +39,6 @@ type Filtros = {
 const props = defineProps<{
     movimientos: Paginado;
     filtros: Filtros;
-    productos: { id: number; nombre: string }[];
     puedeCrear: boolean;
     puedeReportar: boolean;
 }>();
@@ -51,8 +50,6 @@ defineOptions({
 });
 
 const filtros = reactive({
-    producto_id:
-        props.filtros.producto_id != null ? String(props.filtros.producto_id) : '',
     tipo_movimiento: props.filtros.tipo_movimiento ?? '',
     motivo: props.filtros.motivo ?? '',
     desde: props.filtros.desde ?? '',
@@ -66,6 +63,10 @@ function queryFiltros(): Record<string, string> {
             query[clave] = String(valor);
         }
     });
+    // Preserva el término del buscador global (filtro `q`) al filtrar o generar reportes.
+    if (props.filtros.q) {
+        query.q = props.filtros.q;
+    }
     return query;
 }
 
@@ -78,7 +79,6 @@ function aplicar(): void {
 }
 
 function limpiar(): void {
-    filtros.producto_id = '';
     filtros.tipo_movimiento = '';
     filtros.motivo = '';
     filtros.desde = '';
@@ -118,23 +118,6 @@ const selectClass =
         <div
             class="grid gap-3 rounded-xl border border-sidebar-border/70 p-3 sm:grid-cols-2 lg:grid-cols-5 dark:border-sidebar-border"
         >
-            <div class="grid gap-1.5">
-                <Label for="f-producto">Producto</Label>
-                <select
-                    id="f-producto"
-                    v-model="filtros.producto_id"
-                    :class="selectClass"
-                >
-                    <option value="">Todos</option>
-                    <option
-                        v-for="p in productos"
-                        :key="p.id"
-                        :value="String(p.id)"
-                    >
-                        {{ p.nombre }}
-                    </option>
-                </select>
-            </div>
             <div class="grid gap-1.5">
                 <Label for="f-tipo">Tipo</Label>
                 <select

@@ -26,6 +26,7 @@ type UsuarioItem = {
 };
 
 type Filtros = {
+    q: string | null;
     rol_id: number | null;
     desde: string | null;
     hasta: string | null;
@@ -61,6 +62,10 @@ function queryFiltros(): Record<string, string> {
             query[clave] = String(valor);
         }
     });
+    // Preserva el término del buscador global (filtro `q`) al filtrar o generar reportes.
+    if (props.filtros.q) {
+        query.q = props.filtros.q;
+    }
     return query;
 }
 

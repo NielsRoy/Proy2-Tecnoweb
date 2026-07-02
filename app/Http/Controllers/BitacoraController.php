@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Bitacora;
-use App\Models\User;
+use App\Support\BusquedaTabla;
 use App\Support\Reporte;
 use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -36,9 +36,8 @@ class BitacoraController extends Controller
         return Inertia::render('bitacora/Index', [
             'registros' => $registros,
             'filtros' => $filtros,
-            // Opciones para los selects de filtro.
+            // Opciones para el select de acción (la búsqueda por usuario la da el buscador global).
             'acciones' => Bitacora::query()->distinct()->orderBy('accion')->pluck('accion'),
-            'usuarios' => User::orderBy('name')->get(['id', 'name']),
             'puedeReportar' => $request->user()->tienePermiso('bitacora', 'reportar'),
         ]);
     }
@@ -75,18 +74,16 @@ class BitacoraController extends Controller
     private function consultaFiltrada(Request $request): array
     {
         $filtros = [
-            'accion' => $request->string('accion')->toString() ?: null,
-            'user_id' => $request->integer('user_id') ?: null,
             'q' => $request->string('q')->toString() ?: null,
+            'accion' => $request->string('accion')->toString() ?: null,
             'desde' => $request->date('desde')?->toDateString(),
             'hasta' => $request->date('hasta')?->toDateString(),
         ];
 
         $query = Bitacora::query()
             ->with('usuario:id,name')
+            ->when($filtros['q'], fn ($q, $t) => BusquedaTabla::aplicar($q, $t, [], ['usuario' => ['name']]))
             ->when($filtros['accion'], fn ($q, $a) => $q->where('accion', $a))
-            ->when($filtros['user_id'], fn ($q, $id) => $q->where('user_id', $id))
-            ->when($filtros['q'], fn ($q, $texto) => $q->where('descripcion', 'like', "%{$texto}%"))
             ->when($filtros['desde'], fn ($q, $d) => $q->whereDate('created_at', '>=', $d))
             ->when($filtros['hasta'], fn ($q, $h) => $q->whereDate('created_at', '<=', $h))
             ->orderByDesc('created_at');
@@ -98,14 +95,11 @@ class BitacoraController extends Controller
     private function descripcionFiltros(array $f): string
     {
         $partes = [];
+        if ($f['q']) {
+            $partes[] = 'Búsqueda: «'.$f['q'].'»';
+        }
         if ($f['accion']) {
             $partes[] = 'Acción: '.$f['accion'];
-        }
-        if ($f['user_id']) {
-            $partes[] = 'Usuario: '.(User::find($f['user_id'])?->name ?? $f['user_id']);
-        }
-        if ($f['q']) {
-            $partes[] = 'Texto: "'.$f['q'].'"';
         }
         if ($f['desde']) {
             $partes[] = 'Desde: '.$f['desde'];

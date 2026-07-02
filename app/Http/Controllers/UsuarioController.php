@@ -7,6 +7,7 @@ use App\Concerns\ProfileValidationRules;
 use App\Models\Bitacora;
 use App\Models\Rol;
 use App\Models\User;
+use App\Support\BusquedaTabla;
 use App\Support\Reporte;
 use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -94,6 +95,7 @@ class UsuarioController extends Controller
     private function consultaFiltrada(Request $request): array
     {
         $filtros = [
+            'q' => $request->string('q')->toString() ?: null,
             'rol_id' => $request->integer('rol_id') ?: null,
             'desde' => $request->date('desde')?->toDateString(),
             'hasta' => $request->date('hasta')?->toDateString(),
@@ -101,6 +103,7 @@ class UsuarioController extends Controller
 
         $query = User::query()
             ->with(['roles' => fn ($q) => $q->wherePivot('activo', true)])
+            ->when($filtros['q'], fn ($q, $t) => BusquedaTabla::aplicar($q, $t, ['name', 'email']))
             ->when($filtros['rol_id'], fn ($q, $id) => $q->whereHas(
                 'roles',
                 fn ($r) => $r->where('rol.id', $id)->where('usuario_rol.activo', true),

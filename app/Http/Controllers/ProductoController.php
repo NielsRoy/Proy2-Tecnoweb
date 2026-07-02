@@ -5,10 +5,12 @@ namespace App\Http\Controllers;
 use App\Models\Bitacora;
 use App\Models\Categoria;
 use App\Models\Producto;
+use App\Support\BusquedaTabla;
 use App\Support\Reporte;
 use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -85,6 +87,7 @@ class ProductoController extends Controller
             : null;
 
         $filtros = [
+            'q' => $request->string('q')->toString() ?: null,
             'categoria_id' => $request->integer('categoria_id') ?: null,
             'precio_min' => $num('precio_min'),
             'precio_max' => $num('precio_max'),
@@ -94,6 +97,7 @@ class ProductoController extends Controller
 
         $query = Producto::where('activo', true)
             ->with('categoria:id,nombre')
+            ->when($filtros['q'], fn ($q, $t) => BusquedaTabla::aplicar($q, $t, ['nombre', 'descripcion']))
             ->when($filtros['categoria_id'], fn ($q, $id) => $q->where('categoria_id', $id))
             ->when($filtros['precio_min'] !== null, fn ($q) => $q->where('precio', '>=', $filtros['precio_min']))
             ->when($filtros['precio_max'] !== null, fn ($q) => $q->where('precio', '<=', $filtros['precio_max']))
@@ -214,7 +218,7 @@ class ProductoController extends Controller
     /**
      * Categorias activas para el selector del formulario.
      *
-     * @return \Illuminate\Support\Collection<int, array{id: int, nombre: string}>
+     * @return Collection<int, array{id: int, nombre: string}>
      */
     private function categoriasParaFormulario()
     {

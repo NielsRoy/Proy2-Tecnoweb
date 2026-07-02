@@ -10,6 +10,7 @@ use App\Models\Promocion;
 use App\Models\User;
 use App\Models\Venta;
 use App\Services\RegistrarVenta;
+use App\Support\BusquedaTabla;
 use App\Support\PlanPago;
 use App\Support\Reporte;
 use Illuminate\Contracts\Database\Eloquent\Builder;
@@ -59,7 +60,6 @@ class VentaController extends Controller
         return Inertia::render('ventas/Index', [
             'ventas' => $ventas,
             'filtros' => $filtros,
-            'clientes' => User::conRolVigente('Cliente')->orderBy('name')->get(['id', 'name']),
             'puedeCrear' => $request->user()->tienePermiso('ventas', 'registrar'),
             'puedeEliminar' => $request->user()->tienePermiso('ventas', 'eliminar'),
             'puedeReportar' => $request->user()->tienePermiso('ventas', 'reportar'),
@@ -105,7 +105,7 @@ class VentaController extends Controller
     private function consultaFiltrada(Request $request): array
     {
         $filtros = [
-            'cliente_id' => $request->integer('cliente_id') ?: null,
+            'q' => $request->string('q')->toString() ?: null,
             'tipo_pago' => $request->string('tipo_pago')->toString() ?: null,
             'estado_pago' => $request->string('estado_pago')->toString() ?: null,
             'estado' => $request->string('estado')->toString() ?: null,
@@ -116,7 +116,7 @@ class VentaController extends Controller
         $query = Venta::query()
             ->with('cliente:id,name')
             ->withCount('detalles')
-            ->when($filtros['cliente_id'], fn ($q, $id) => $q->where('cliente_id', $id))
+            ->when($filtros['q'], fn ($q, $t) => BusquedaTabla::aplicar($q, $t, [], ['cliente' => ['name']]))
             ->when($filtros['tipo_pago'], fn ($q, $t) => $q->where('tipo_pago', $t))
             ->when($filtros['estado_pago'], fn ($q, $e) => $q->where('estado_pago', $e))
             ->when($filtros['estado'], fn ($q, $e) => $q->where('estado', $e))
@@ -132,8 +132,8 @@ class VentaController extends Controller
     private function descripcionFiltros(array $f): string
     {
         $partes = [];
-        if ($f['cliente_id']) {
-            $partes[] = 'Cliente: '.(User::find($f['cliente_id'])?->name ?? $f['cliente_id']);
+        if ($f['q']) {
+            $partes[] = 'Búsqueda: «'.$f['q'].'»';
         }
         if ($f['tipo_pago']) {
             $partes[] = 'Tipo de pago: '.ucfirst($f['tipo_pago']);

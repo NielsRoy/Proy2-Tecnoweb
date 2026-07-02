@@ -40,7 +40,7 @@ type Paginado = {
 };
 
 type Filtros = {
-    cliente_id: number | null;
+    q: string | null;
     tipo_pago: string | null;
     estado_pago: string | null;
     estado: string | null;
@@ -51,7 +51,6 @@ type Filtros = {
 const props = defineProps<{
     ventas: Paginado;
     filtros: Filtros;
-    clientes: { id: number; name: string }[];
     puedeCrear: boolean;
     puedeEliminar: boolean;
     puedeReportar: boolean;
@@ -64,8 +63,6 @@ defineOptions({
 });
 
 const filtros = reactive({
-    cliente_id:
-        props.filtros.cliente_id != null ? String(props.filtros.cliente_id) : '',
     tipo_pago: props.filtros.tipo_pago ?? '',
     estado_pago: props.filtros.estado_pago ?? '',
     estado: props.filtros.estado ?? '',
@@ -80,6 +77,10 @@ function queryFiltros(): Record<string, string> {
             query[clave] = String(valor);
         }
     });
+    // Preserva el término del buscador global (filtro `q`) al filtrar o generar reportes.
+    if (props.filtros.q) {
+        query.q = props.filtros.q;
+    }
     return query;
 }
 
@@ -92,7 +93,6 @@ function aplicar(): void {
 }
 
 function limpiar(): void {
-    filtros.cliente_id = '';
     filtros.tipo_pago = '';
     filtros.estado_pago = '';
     filtros.estado = '';
@@ -149,23 +149,6 @@ function confirmarAnular(): void {
         <div
             class="grid gap-3 rounded-xl border border-sidebar-border/70 p-3 sm:grid-cols-2 lg:grid-cols-6 dark:border-sidebar-border"
         >
-            <div class="grid gap-1.5">
-                <Label for="f-cliente">Cliente</Label>
-                <select
-                    id="f-cliente"
-                    v-model="filtros.cliente_id"
-                    :class="selectClass"
-                >
-                    <option value="">Todos</option>
-                    <option
-                        v-for="c in clientes"
-                        :key="c.id"
-                        :value="String(c.id)"
-                    >
-                        {{ c.name }}
-                    </option>
-                </select>
-            </div>
             <div class="grid gap-1.5">
                 <Label for="f-tipo">Tipo de pago</Label>
                 <select id="f-tipo" v-model="filtros.tipo_pago" :class="selectClass">

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Bitacora;
 use App\Models\Producto;
 use App\Models\Promocion;
+use App\Support\BusquedaTabla;
 use App\Support\Reporte;
 use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -41,7 +42,6 @@ class PromocionController extends Controller
         return Inertia::render('promociones/Index', [
             'promociones' => $promociones,
             'filtros' => $filtros,
-            'productos' => Producto::where('activo', true)->orderBy('nombre')->get(['id', 'nombre']),
             'puedeCrear' => $request->user()->tienePermiso('promociones', 'registrar'),
             'puedeEditar' => $request->user()->tienePermiso('promociones', 'modificar'),
             'puedeEliminar' => $request->user()->tienePermiso('promociones', 'eliminar'),
@@ -93,14 +93,14 @@ class PromocionController extends Controller
     private function consultaFiltrada(Request $request): array
     {
         $filtros = [
-            'producto_id' => $request->integer('producto_id') ?: null,
+            'q' => $request->string('q')->toString() ?: null,
             'desde' => $request->date('desde')?->toDateString(),
             'hasta' => $request->date('hasta')?->toDateString(),
         ];
 
         $query = Promocion::with('producto:id,nombre')
             ->where('activo', true)
-            ->when($filtros['producto_id'], fn ($q, $id) => $q->where('producto_id', $id))
+            ->when($filtros['q'], fn ($q, $t) => BusquedaTabla::aplicar($q, $t, ['nombre'], ['producto' => ['nombre']]))
             ->when($filtros['desde'], fn ($q, $d) => $q->whereDate('fecha_fin', '>=', $d))
             ->when($filtros['hasta'], fn ($q, $h) => $q->whereDate('fecha_inicio', '<=', $h))
             ->orderByDesc('fecha_inicio');
@@ -112,8 +112,8 @@ class PromocionController extends Controller
     private function descripcionFiltros(array $f): string
     {
         $partes = [];
-        if ($f['producto_id']) {
-            $partes[] = 'Producto: '.(Producto::find($f['producto_id'])?->nombre ?? $f['producto_id']);
+        if ($f['q']) {
+            $partes[] = 'Búsqueda: «'.$f['q'].'»';
         }
         if ($f['desde']) {
             $partes[] = 'Activas desde: '.$f['desde'];

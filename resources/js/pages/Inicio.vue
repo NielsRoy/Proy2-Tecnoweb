@@ -32,6 +32,7 @@ const props = defineProps<{
     carritoCount: number;
     categorias: CategoriaTienda[];
     categoriaActiva: number | null;
+    filtros: { q: string | null };
 }>();
 
 // Categoria activa (objeto) para mostrar su banner; null = "Todas".
@@ -61,13 +62,28 @@ const gradientes = [
     'from-rose-600 to-rose-400',
 ];
 
-// Filtra por categoria sin crear URLs nuevas: solo cambia el query param de /inicio.
+// Filtra por categoria sin crear URLs nuevas: solo cambia el query param de /inicio. Preserva el
+// término del buscador global (`q`) para que categoría y búsqueda se combinen.
 function filtrarPorCategoria(id: number | null): void {
-    router.get(
-        inicio().url,
-        id ? { categoria: id } : {},
-        { preserveScroll: true, preserveState: true, replace: true },
-    );
+    const data: Record<string, string | number> = {};
+    if (id) data.categoria = id;
+    if (props.filtros.q) data.q = props.filtros.q;
+    router.get(inicio().url, data, {
+        preserveScroll: true,
+        preserveState: true,
+        replace: true,
+    });
+}
+
+// Limpia solo la búsqueda (mantiene la categoría activa).
+function limpiarBusqueda(): void {
+    const data: Record<string, string | number> = {};
+    if (props.categoriaActiva) data.categoria = props.categoriaActiva;
+    router.get(inicio().url, data, {
+        preserveScroll: true,
+        preserveState: true,
+        replace: true,
+    });
 }
 
 defineOptions({
@@ -142,9 +158,20 @@ function descuentoLabel(p: ProductoTienda): string | null {
             </Button>
         </div>
 
-        <!-- Galería de categorías (bento): solo cuando no hay filtro activo. Clic = filtra. -->
+        <!-- Búsqueda activa (buscador global): muestra el término y permite limpiarlo. -->
         <div
-            v-if="categoriaActiva === null && galeria.length > 0"
+            v-if="props.filtros.q"
+            class="flex items-center gap-2 text-sm text-muted-foreground"
+        >
+            <span>Resultados para «{{ props.filtros.q }}»</span>
+            <Button variant="outline" size="sm" @click="limpiarBusqueda">
+                Limpiar búsqueda
+            </Button>
+        </div>
+
+        <!-- Galería de categorías (bento): solo cuando no hay filtro (ni categoría ni búsqueda). Clic = filtra. -->
+        <div
+            v-if="!props.filtros.q && categoriaActiva === null && galeria.length > 0"
             class="grid auto-rows-[120px] grid-cols-2 gap-3 md:grid-cols-4"
         >
             <button

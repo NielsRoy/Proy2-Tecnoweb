@@ -30,9 +30,8 @@ type Paginado = {
 };
 
 type Filtros = {
-    accion: string | null;
-    user_id: number | null;
     q: string | null;
+    accion: string | null;
     desde: string | null;
     hasta: string | null;
 };
@@ -41,7 +40,6 @@ const props = defineProps<{
     registros: Paginado;
     filtros: Filtros;
     acciones: string[];
-    usuarios: { id: number; name: string }[];
     puedeReportar: boolean;
 }>();
 
@@ -52,10 +50,9 @@ defineOptions({
 });
 
 // Estado local de los filtros (vacío = sin filtrar). Se inicializa con lo que vino del server.
+// La búsqueda por nombre de usuario la provee el buscador global (filtro `q`), no un input de esta vista.
 const filtros = reactive({
     accion: props.filtros.accion ?? '',
-    user_id: props.filtros.user_id != null ? String(props.filtros.user_id) : '',
-    q: props.filtros.q ?? '',
     desde: props.filtros.desde ?? '',
     hasta: props.filtros.hasta ?? '',
 });
@@ -68,6 +65,10 @@ function queryFiltros(): Record<string, string> {
             query[clave] = String(valor);
         }
     });
+    // Preserva el término del buscador global (filtro `q`) al filtrar o generar reportes.
+    if (props.filtros.q) {
+        query.q = props.filtros.q;
+    }
     return query;
 }
 
@@ -81,8 +82,6 @@ function aplicar(): void {
 
 function limpiar(): void {
     filtros.accion = '';
-    filtros.user_id = '';
-    filtros.q = '';
     filtros.desde = '';
     filtros.hasta = '';
     router.get(index().url, {}, { preserveScroll: true, replace: true });
@@ -125,7 +124,7 @@ const selectClass =
 
         <!-- Filtros -->
         <div
-            class="grid gap-3 rounded-xl border border-sidebar-border/70 p-3 sm:grid-cols-2 lg:grid-cols-5 dark:border-sidebar-border"
+            class="grid gap-3 rounded-xl border border-sidebar-border/70 p-3 sm:grid-cols-2 lg:grid-cols-4 dark:border-sidebar-border"
         >
             <div class="grid gap-1.5">
                 <Label for="f-accion">Acción</Label>
@@ -137,15 +136,6 @@ const selectClass =
                 </select>
             </div>
             <div class="grid gap-1.5">
-                <Label for="f-usuario">Usuario</Label>
-                <select id="f-usuario" v-model="filtros.user_id" :class="selectClass">
-                    <option value="">Todos</option>
-                    <option v-for="u in usuarios" :key="u.id" :value="String(u.id)">
-                        {{ u.name }}
-                    </option>
-                </select>
-            </div>
-            <div class="grid gap-1.5">
                 <Label for="f-desde">Desde</Label>
                 <Input id="f-desde" type="date" v-model="filtros.desde" />
             </div>
@@ -153,17 +143,8 @@ const selectClass =
                 <Label for="f-hasta">Hasta</Label>
                 <Input id="f-hasta" type="date" v-model="filtros.hasta" />
             </div>
-            <div class="grid gap-1.5">
-                <Label for="f-q">Buscar</Label>
-                <Input
-                    id="f-q"
-                    v-model="filtros.q"
-                    placeholder="En la descripción…"
-                    @keyup.enter="aplicar"
-                />
-            </div>
             <div
-                class="flex flex-wrap items-end gap-2 sm:col-span-2 lg:col-span-5"
+                class="flex flex-wrap items-end gap-2 sm:col-span-2 lg:col-span-4"
             >
                 <Button @click="aplicar">Filtrar</Button>
                 <Button variant="outline" @click="limpiar">Limpiar</Button>

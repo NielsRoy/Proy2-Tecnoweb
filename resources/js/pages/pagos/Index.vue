@@ -44,7 +44,7 @@ type Paginado = {
 };
 
 type Filtros = {
-    cliente_id: number | null;
+    q: string | null;
     metodo: string | null;
     estado: string | null;
     venc_desde: string | null;
@@ -55,7 +55,6 @@ type Filtros = {
 
 const props = defineProps<{
     pagos: Paginado;
-    clientes: { id: number; name: string }[];
     filtros: Filtros;
     metodos: string[];
     puedeRegistrar: boolean;
@@ -69,8 +68,6 @@ defineOptions({
 });
 
 const filtros = reactive({
-    cliente_id:
-        props.filtros.cliente_id != null ? String(props.filtros.cliente_id) : '',
     metodo: props.filtros.metodo ?? '',
     estado: props.filtros.estado ?? '',
     venc_desde: props.filtros.venc_desde ?? '',
@@ -86,6 +83,10 @@ function queryFiltros(): Record<string, string> {
             query[clave] = String(valor);
         }
     });
+    // Preserva el término del buscador global (filtro `q`) al filtrar o generar reportes.
+    if (props.filtros.q) {
+        query.q = props.filtros.q;
+    }
     return query;
 }
 
@@ -98,7 +99,6 @@ function aplicar(): void {
 }
 
 function limpiar(): void {
-    filtros.cliente_id = '';
     filtros.metodo = '';
     filtros.estado = '';
     filtros.venc_desde = '';
@@ -173,15 +173,6 @@ const selectClass =
         <div
             class="grid gap-3 rounded-xl border border-sidebar-border/70 p-3 sm:grid-cols-2 lg:grid-cols-4 dark:border-sidebar-border"
         >
-            <div class="grid gap-1.5">
-                <Label for="f-cliente">Cliente</Label>
-                <select id="f-cliente" v-model="filtros.cliente_id" :class="selectClass">
-                    <option value="">Todos</option>
-                    <option v-for="c in clientes" :key="c.id" :value="String(c.id)">
-                        {{ c.name }}
-                    </option>
-                </select>
-            </div>
             <div class="grid gap-1.5">
                 <Label for="f-metodo">Método</Label>
                 <select id="f-metodo" v-model="filtros.metodo" :class="selectClass">

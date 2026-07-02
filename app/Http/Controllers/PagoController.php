@@ -4,8 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Bitacora;
 use App\Models\Pago;
-use App\Models\User;
 use App\Models\Venta;
+use App\Support\BusquedaTabla;
 use App\Support\Reporte;
 use App\Support\Url;
 use Illuminate\Contracts\Database\Eloquent\Builder;
@@ -60,7 +60,6 @@ class PagoController extends Controller
 
         return Inertia::render('pagos/Index', [
             'pagos' => $pagos,
-            'clientes' => User::conRolVigente('Cliente')->orderBy('name')->get(['id', 'name']),
             'filtros' => $filtros,
             'metodos' => self::METODOS,
             'puedeRegistrar' => $request->user()->tienePermiso('pagos', 'registrar'),
@@ -105,7 +104,7 @@ class PagoController extends Controller
     private function consultaFiltrada(Request $request): array
     {
         $filtros = [
-            'cliente_id' => $request->integer('cliente_id') ?: null,
+            'q' => $request->string('q')->toString() ?: null,
             'metodo' => $request->string('metodo')->toString() ?: null,
             'estado' => $request->string('estado')->toString() ?: null,
             'venc_desde' => $request->date('venc_desde')?->toDateString(),
@@ -117,7 +116,7 @@ class PagoController extends Controller
         $query = Pago::query()
             ->with('venta.cliente:id,name')
             ->whereHas('venta', fn ($q) => $q->where('estado', '!=', Venta::ESTADO_ANULADA))
-            ->when($filtros['cliente_id'], fn ($q, $id) => $q->whereHas('venta', fn ($qq) => $qq->where('cliente_id', $id)))
+            ->when($filtros['q'], fn ($q, $t) => BusquedaTabla::aplicar($q, $t, [], ['venta.cliente' => ['name']]))
             ->when($filtros['metodo'], fn ($q, $m) => $q->where('metodo', $m))
             ->when($filtros['estado'], fn ($q, $e) => $q->where('estado', $e))
             ->when($filtros['venc_desde'], fn ($q, $d) => $q->whereDate('fecha_vencimiento', '>=', $d))
@@ -134,8 +133,8 @@ class PagoController extends Controller
     private function descripcionFiltros(array $f): string
     {
         $partes = [];
-        if ($f['cliente_id']) {
-            $partes[] = 'Cliente: '.(User::find($f['cliente_id'])?->name ?? $f['cliente_id']);
+        if ($f['q']) {
+            $partes[] = 'Búsqueda: «'.$f['q'].'»';
         }
         if ($f['metodo']) {
             $partes[] = 'Método: '.ucfirst($f['metodo']);

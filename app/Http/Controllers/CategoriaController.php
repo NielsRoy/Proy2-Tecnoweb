@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Bitacora;
 use App\Models\Categoria;
+use App\Support\BusquedaTabla;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -21,7 +22,11 @@ class CategoriaController extends Controller
 {
     public function index(Request $request): Response
     {
+        // `q` = término del buscador global (paso 2): filtra la tabla por nombre/descripción.
+        $q = $request->string('q')->toString() ?: null;
+
         $categorias = Categoria::where('activo', true)
+            ->when($q, fn ($query, $t) => BusquedaTabla::aplicar($query, $t, ['nombre', 'descripcion']))
             ->orderBy('orden')
             ->orderBy('nombre')
             ->get()
@@ -35,6 +40,7 @@ class CategoriaController extends Controller
 
         return Inertia::render('categorias/Index', [
             'categorias' => $categorias,
+            'filtros' => ['q' => $q],
             'puedeCrear' => $request->user()->tienePermiso('categorias', 'registrar'),
             'puedeEditar' => $request->user()->tienePermiso('categorias', 'modificar'),
             'puedeEliminar' => $request->user()->tienePermiso('categorias', 'eliminar'),

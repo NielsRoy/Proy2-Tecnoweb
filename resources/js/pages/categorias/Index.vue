@@ -22,8 +22,9 @@ type CategoriaItem = {
     foto_url: string | null;
 };
 
-defineProps<{
+const props = defineProps<{
     categorias: CategoriaItem[];
+    filtros: { q: string | null };
     puedeCrear: boolean;
     puedeEditar: boolean;
     puedeEliminar: boolean;
@@ -34,6 +35,11 @@ defineOptions({
         breadcrumbs: [{ title: 'Categorías', href: index() }],
     },
 });
+
+// Limpia la búsqueda del buscador global (única "filtro" de esta vista).
+function limpiarBusqueda(): void {
+    router.get(index().url, {}, { preserveScroll: true, replace: true });
+}
 
 const categoriaAEliminar = ref<CategoriaItem | null>(null);
 const eliminando = ref(false);
@@ -69,6 +75,17 @@ function confirmarEliminar(): void {
                 <Link :href="create()">Nueva categoría</Link>
             </Button>
         </header>
+
+        <!-- Búsqueda activa (desde el buscador global): permite limpiarla. -->
+        <div
+            v-if="props.filtros.q"
+            class="flex items-center gap-2 text-sm text-muted-foreground"
+        >
+            <span>Resultados para «{{ props.filtros.q }}»</span>
+            <Button variant="outline" size="sm" @click="limpiarBusqueda">
+                Limpiar
+            </Button>
+        </div>
 
         <div
             class="overflow-x-auto rounded-xl border border-sidebar-border/70 dark:border-sidebar-border"

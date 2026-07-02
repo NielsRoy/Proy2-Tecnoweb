@@ -28,6 +28,7 @@ type ProductoItem = {
 };
 
 type Filtros = {
+    q: string | null;
     categoria_id: number | null;
     precio_min: number | null;
     precio_max: number | null;
@@ -73,6 +74,10 @@ function queryFiltros(): Record<string, string> {
             query[clave] = String(valor);
         }
     });
+    // Preserva el término del buscador global (filtro `q`) al filtrar o generar reportes.
+    if (props.filtros.q) {
+        query.q = props.filtros.q;
+    }
     return query;
 }
 
