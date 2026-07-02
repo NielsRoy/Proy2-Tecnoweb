@@ -238,6 +238,7 @@ function confirmarPedido(): void {
                     <tr
                         class="border-b border-sidebar-border/70 dark:border-sidebar-border"
                     >
+                        <th class="p-3 text-left font-medium">Código</th>
                         <th class="p-3 text-left font-medium">Fecha</th>
                         <th class="p-3 text-left font-medium">Cliente</th>
                         <th class="p-3 text-right font-medium">Ítems</th>
@@ -253,6 +254,9 @@ function confirmarPedido(): void {
                         :key="v.id"
                         class="border-b border-sidebar-border/70 last:border-0 dark:border-sidebar-border"
                     >
+                        <td class="p-3 font-medium whitespace-nowrap">
+                            #{{ v.id }}
+                        </td>
                         <td class="p-3 whitespace-nowrap text-muted-foreground">
                             {{ v.fecha }}
                         </td>
@@ -315,7 +319,7 @@ function confirmarPedido(): void {
                     </tr>
                     <tr v-if="ventas.data.length === 0">
                         <td
-                            colspan="7"
+                            colspan="8"
                             class="p-6 text-center text-muted-foreground"
                         >
                             No hay ventas que coincidan con los filtros.

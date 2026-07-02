@@ -212,6 +212,7 @@ function confirmarAnular(): void {
                     <tr
                         class="border-b border-sidebar-border/70 dark:border-sidebar-border"
                     >
+                        <th class="p-3 text-left font-medium">Código</th>
                         <th class="p-3 text-left font-medium">Fecha</th>
                         <th class="p-3 text-left font-medium">Proveedor</th>
                         <th class="p-3 text-right font-medium">Ítems</th>
@@ -226,6 +227,9 @@ function confirmarAnular(): void {
                         :key="c.id"
                         class="border-b border-sidebar-border/70 last:border-0 dark:border-sidebar-border"
                     >
+                        <td class="p-3 font-medium whitespace-nowrap">
+                            #{{ c.id }}
+                        </td>
                         <td class="p-3 whitespace-nowrap text-muted-foreground">
                             {{ c.fecha }}
                         </td>
@@ -263,7 +267,7 @@ function confirmarAnular(): void {
                     </tr>
                     <tr v-if="compras.data.length === 0">
                         <td
-                            colspan="6"
+                            colspan="7"
                             class="p-6 text-center text-muted-foreground"
                         >
                             No hay compras que coincidan con los filtros.
