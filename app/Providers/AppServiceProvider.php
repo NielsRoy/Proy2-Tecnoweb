@@ -37,14 +37,10 @@ class AppServiceProvider extends ServiceProvider
             app()->isProduction(),
         );
 
-        Password::defaults(fn (): ?Password => app()->isProduction()
-            ? Password::min(12)
-                ->mixedCase()
-                ->letters()
-                ->numbers()
-                ->symbols()
-                ->uncompromised()
-            : null,
-        );
+        // Regla de password: SOLO mínimo 8 caracteres, en local Y en producción. Es una decisión
+        // deliberada para la defensa del proyecto (el docente crea usuarios e inicia sesión en vivo):
+        // una password compleja quitaría tiempo. Si algún día se quisiera endurecer en producción,
+        // aquí es el único punto a tocar (encadenar ->mixedCase()->numbers()->symbols()->uncompromised()).
+        Password::defaults(fn (): Password => Password::min(8));
     }
 }
