@@ -118,6 +118,15 @@ class User extends Authenticatable
     }
 
     /**
+     * ¿El usuario tiene un rol VIGENTE con ese nombre? (p. ej. acotar Compras al proveedor).
+     * Ej: $user->tieneRolVigente('Proveedor').
+     */
+    public function tieneRolVigente(string $nombreRol): bool
+    {
+        return $this->rolesVigentes()->where('rol.nombre', $nombreRol)->exists();
+    }
+
+    /**
      * Acciones permitidas al usuario hoy: activas, de un modulo activo, otorgadas por
      * alguno de sus roles vigentes. Cada accion trae su modulo cargado (with('modulo')).
      *

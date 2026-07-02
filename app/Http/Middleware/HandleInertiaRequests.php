@@ -78,7 +78,22 @@ class HandleInertiaRequests extends Middleware
             return [];
         }
 
-        return $this->resolverHrefs($user->modulosPermitidos());
+        $menu = $this->resolverHrefs($user->modulosPermitidos());
+
+        // Perspectiva PROVEEDOR: para el, las "Compras" de la tienda son SUS ventas -> se renombra el
+        // item del menu (nombre + icono). Los demas roles siguen viendo "Compras" con su icono.
+        if ($user->tieneRolVigente('Proveedor')) {
+            $menu = array_map(function (array $nodo) {
+                if (($nodo['clave'] ?? null) === 'compras') {
+                    $nodo['nombre'] = 'Mis ventas';
+                    $nodo['icono'] = 'Truck';
+                }
+
+                return $nodo;
+            }, $menu);
+        }
+
+        return $menu;
     }
 
     /**

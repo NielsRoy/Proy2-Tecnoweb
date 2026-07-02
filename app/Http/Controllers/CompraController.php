@@ -9,6 +9,7 @@ use App\Models\Producto;
 use App\Models\User;
 use App\Support\BusquedaTabla;
 use App\Support\Reporte;
+use App\Support\Url;
 use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -31,7 +32,12 @@ class CompraController extends Controller
 {
     public function index(Request $request): Response
     {
-        [$filtros, $query] = $this->consultaFiltrada($request);
+        // Si el usuario es Proveedor, la vista se acota a SUS compras (no ve las de otros ni el filtro
+        // de proveedor). El acotamiento es un where DURO en la consulta (ver consultaFiltrada).
+        $esProveedor = $request->user()->tieneRolVigente('Proveedor');
+        $forzar = $esProveedor ? $request->user()->id : null;
+
+        [$filtros, $query] = $this->consultaFiltrada($request, $forzar);
 
         $compras = $query
             ->paginate(20)
@@ -48,7 +54,12 @@ class CompraController extends Controller
         return Inertia::render('compras/Index', [
             'compras' => $compras,
             'filtros' => $filtros,
-            'proveedores' => User::conRolVigente('Proveedor')->orderBy('name')->get(['id', 'name']),
+            'esProveedor' => $esProveedor,
+            // El proveedor ve "Mis ventas" (sidebar, título y breadcrumb); los demás, "Compras".
+            'breadcrumbs' => $this->breadcrumbs($esProveedor),
+            'proveedores' => $esProveedor
+                ? []
+                : User::conRolVigente('Proveedor')->orderBy('name')->get(['id', 'name']),
             'puedeCrear' => $request->user()->tienePermiso('compras', 'registrar'),
             'puedeEliminar' => $request->user()->tienePermiso('compras', 'eliminar'),
             'puedeReportar' => $request->user()->tienePermiso('compras', 'reportar'),
@@ -61,7 +72,10 @@ class CompraController extends Controller
      */
     public function reporte(Request $request): mixed
     {
-        [$filtros, $query] = $this->consultaFiltrada($request);
+        // Mismo acotamiento que el index: un Proveedor solo reporta SUS compras.
+        $forzar = $request->user()->tieneRolVigente('Proveedor') ? $request->user()->id : null;
+
+        [$filtros, $query] = $this->consultaFiltrada($request, $forzar);
         $compras = $query->get();
 
         $columnas = ['Fecha', 'Proveedor', 'Ítems', 'Total (Bs)', 'Estado'];
@@ -87,9 +101,13 @@ class CompraController extends Controller
      * Construye la consulta de compras aplicando los filtros del request (proveedor/estado/fechas).
      * La comparten index() (pagina) y reporte() (->get()).
      *
+     * `$forzarProveedorId` (si no es null) fija un where DURO por proveedor: se combina con AND con
+     * TODOS los demas filtros y el buscador `q`, asi un Proveedor NUNCA puede ver compras ajenas
+     * (buscar el nombre de otro proveedor o mandar ?proveedor_id=otro da vacio).
+     *
      * @return array{0: array<string, mixed>, 1: Builder}
      */
-    private function consultaFiltrada(Request $request): array
+    private function consultaFiltrada(Request $request, ?int $forzarProveedorId = null): array
     {
         $filtros = [
             'q' => $request->string('q')->toString() ?: null,
@@ -102,6 +120,7 @@ class CompraController extends Controller
         $query = Compra::query()
             ->with('proveedor:id,name')
             ->withCount('detalles')
+            ->when($forzarProveedorId !== null, fn ($q) => $q->where('proveedor_id', $forzarProveedorId))
             ->when($filtros['q'], fn ($q, $t) => BusquedaTabla::aplicar($q, $t, [], ['proveedor' => ['name']]))
             ->when($filtros['proveedor_id'], fn ($q, $id) => $q->where('proveedor_id', $id))
             ->when($filtros['estado'], fn ($q, $e) => $q->where('estado', $e))
@@ -191,11 +210,18 @@ class CompraController extends Controller
         return redirect()->route('compras.index');
     }
 
-    public function show(Compra $compra): Response
+    public function show(Request $request, Compra $compra): Response
     {
+        $esProveedor = $request->user()->tieneRolVigente('Proveedor');
+
+        // Guardia de propiedad: un Proveedor no puede abrir por URL una compra ajena.
+        abort_if($esProveedor && $compra->proveedor_id !== $request->user()->id, 403);
+
         $compra->load('proveedor:id,name', 'detalles.producto:id,nombre');
 
         return Inertia::render('compras/Show', [
+            'esProveedor' => $esProveedor,
+            'breadcrumbs' => $this->breadcrumbs($esProveedor),
             'compra' => [
                 'id' => $compra->id,
                 'fecha' => $compra->fecha_compra?->format('d/m/Y'),
@@ -210,6 +236,20 @@ class CompraController extends Controller
                 ]),
             ],
         ]);
+    }
+
+    /**
+     * Breadcrumb del módulo Compras. Para el proveedor la sección se llama "Mis ventas" (las compras
+     * de la tienda son sus ventas); el href conserva el subdirectorio (lo consume el <Link> del front).
+     *
+     * @return array<int, array{title: string, href: string}>
+     */
+    private function breadcrumbs(bool $esProveedor): array
+    {
+        return [[
+            'title' => $esProveedor ? 'Mis ventas' : 'Compras',
+            'href' => Url::path('compras.index'),
+        ]];
     }
 
     /**

@@ -22,6 +22,7 @@ type CompraDetalle = {
 
 defineProps<{
     compra: CompraDetalle;
+    esProveedor: boolean;
 }>();
 
 defineOptions({
@@ -32,12 +33,16 @@ defineOptions({
 </script>
 
 <template>
-    <Head :title="`Compra #${compra.id}`" />
+    <Head
+        :title="`${esProveedor ? 'Venta' : 'Compra'} #${compra.id}`"
+    />
 
     <div class="flex h-full flex-1 flex-col gap-4 p-4">
         <header class="flex items-start justify-between gap-4">
             <div class="space-y-1">
-                <h1 class="text-xl font-semibold">Compra #{{ compra.id }}</h1>
+                <h1 class="text-xl font-semibold">
+                    {{ esProveedor ? 'Venta' : 'Compra' }} #{{ compra.id }}
+                </h1>
                 <p class="text-sm text-muted-foreground">
                     {{ compra.proveedor ?? '—' }} · {{ compra.fecha }}
                 </p>

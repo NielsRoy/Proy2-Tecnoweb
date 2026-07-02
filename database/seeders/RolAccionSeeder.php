@@ -25,10 +25,10 @@ class RolAccionSeeder extends Seeder
         $matriz = [
             'Propietario' => '*',
             'Vendedor' => [
-                'dashboard' => ['ver', 'graf_productos', 'graf_ingresos', 'graf_tipo_pago', 'graf_clientes', 'graf_stock', 'graf_promociones'],
+                'dashboard' => ['ver', 'graf_productos', 'graf_metodo_pago', 'graf_tipo_pago', 'graf_clientes', 'graf_stock', 'graf_promociones'],
                 'productos' => ['listar', 'reportar'],
                 'categorias' => ['listar'],
-                'ventas' => ['listar', 'registrar', 'confirmar', 'reportar'],
+                'ventas' => ['listar', 'registrar', 'confirmar', 'eliminar', 'reportar'],
                 'inventarios' => ['listar', 'reportar'],
                 'promociones' => ['listar', 'reportar'],
                 'pagos' => ['listar', 'registrar', 'reportar'],
@@ -46,8 +46,7 @@ class RolAccionSeeder extends Seeder
                 'dashboard' => ['ver', 'graf_productos', 'graf_proveedores', 'graf_stock'],
                 'productos' => ['listar', 'reportar'],
                 'categorias' => ['listar'],
-                'compras' => ['listar', 'registrar', 'reportar'],
-                'inventarios' => ['listar', 'reportar'],
+                'compras' => ['listar', 'reportar'],
                 'mis_compras' => ['ver'],
                 'mis_pagos' => ['ver', 'pagar'],
             ],

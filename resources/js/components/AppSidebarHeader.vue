@@ -6,7 +6,7 @@ import Breadcrumbs from '@/components/Breadcrumbs.vue';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import type { BreadcrumbItem } from '@/types';
 
-withDefaults(
+const props = withDefaults(
     defineProps<{
         breadcrumbs?: BreadcrumbItem[];
     }>(),
@@ -15,10 +15,20 @@ withDefaults(
     },
 );
 
+const page = usePage();
+
 // El buscador global aparece en todos los módulos del sidebar y en /inicio, pero NO en Configuración
 // (perfil/apariencia/seguridad, bajo /settings).
-const page = usePage();
 const mostrarBuscador = computed(() => !page.url.includes('/settings'));
+
+// El servidor puede proveer breadcrumbs (p. ej. Compras se llama "Mis ventas" para el proveedor);
+// si los envía, tienen prioridad sobre los del layout (defineOptions, estáticos).
+const breadcrumbsMostrar = computed<BreadcrumbItem[]>(() => {
+    const delServidor = (page.props as Record<string, unknown>)
+        .breadcrumbs as BreadcrumbItem[] | undefined;
+
+    return delServidor && delServidor.length > 0 ? delServidor : props.breadcrumbs;
+});
 </script>
 
 <template>
@@ -27,8 +37,8 @@ const mostrarBuscador = computed(() => !page.url.includes('/settings'));
     >
         <div class="flex min-w-0 items-center gap-2">
             <SidebarTrigger class="-ml-1" />
-            <template v-if="breadcrumbs && breadcrumbs.length > 0">
-                <Breadcrumbs :breadcrumbs="breadcrumbs" />
+            <template v-if="breadcrumbsMostrar.length > 0">
+                <Breadcrumbs :breadcrumbs="breadcrumbsMostrar" />
             </template>
         </div>
 

@@ -48,6 +48,7 @@ type Filtros = {
 const props = defineProps<{
     compras: Paginado;
     filtros: Filtros;
+    esProveedor: boolean;
     proveedores: { id: number; name: string }[];
     puedeCrear: boolean;
     puedeEliminar: boolean;
@@ -128,15 +129,23 @@ function confirmarAnular(): void {
 </script>
 
 <template>
-    <Head title="Compras" />
+    <Head :title="esProveedor ? 'Mis ventas' : 'Compras'" />
 
     <div class="flex h-full flex-1 flex-col gap-4 p-4">
         <header class="flex items-start justify-between gap-4">
             <div class="space-y-1">
-                <h1 class="text-xl font-semibold">Compras</h1>
+                <h1 class="text-xl font-semibold">
+                    {{ esProveedor ? 'Mis ventas' : 'Compras' }}
+                </h1>
                 <p class="text-sm text-muted-foreground">
-                    Compras a proveedores. Cada compra ingresa stock al inventario.
-                    Anular revierte el stock y conserva el registro.
+                    <template v-if="esProveedor">
+                        Tus ventas a la tienda: las compras que la tienda te ha
+                        registrado.
+                    </template>
+                    <template v-else>
+                        Compras a proveedores. Cada compra ingresa stock al
+                        inventario. Anular revierte el stock y conserva el registro.
+                    </template>
                 </p>
             </div>
             <Button v-if="puedeCrear" as-child>
@@ -148,7 +157,7 @@ function confirmarAnular(): void {
         <div
             class="grid gap-3 rounded-xl border border-sidebar-border/70 p-3 sm:grid-cols-2 lg:grid-cols-4 dark:border-sidebar-border"
         >
-            <div class="grid gap-1.5">
+            <div v-if="!esProveedor" class="grid gap-1.5">
                 <Label for="f-proveedor">Proveedor</Label>
                 <select
                     id="f-proveedor"

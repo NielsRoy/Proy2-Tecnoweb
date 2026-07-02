@@ -11,6 +11,7 @@ import {
     ShieldCheck,
     ShoppingCart,
     Tags,
+    Truck,
     Users,
 } from '@lucide/vue';
 
@@ -29,6 +30,7 @@ const iconos: Record<string, LucideIcon> = {
     ChartColumn,
     ScrollText,
     ShieldCheck,
+    Truck,
 };
 
 export function iconoMenu(nombre: string | null): LucideIcon | undefined {
