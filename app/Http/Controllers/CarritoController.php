@@ -24,7 +24,7 @@ use Inertia\Response;
  */
 class CarritoController extends Controller
 {
-    private const METODOS = [Pago::METODO_EFECTIVO, Pago::METODO_TRANSFERENCIA, Pago::METODO_TARJETA, Pago::METODO_QR];
+    private const METODOS = [Pago::METODO_EFECTIVO, Pago::METODO_TARJETA, Pago::METODO_QR];
 
     /** Vista del carrito + formulario de compra. */
     public function index(Request $request): Response

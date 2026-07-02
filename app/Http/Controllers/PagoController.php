@@ -24,7 +24,7 @@ use Inertia\Response;
  */
 class PagoController extends Controller
 {
-    private const METODOS = [Pago::METODO_EFECTIVO, Pago::METODO_TRANSFERENCIA, Pago::METODO_TARJETA];
+    private const METODOS = [Pago::METODO_EFECTIVO, Pago::METODO_TARJETA];
 
     public function index(Request $request): Response
     {

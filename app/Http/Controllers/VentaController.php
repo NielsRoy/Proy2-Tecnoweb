@@ -37,7 +37,7 @@ use Inertia\Response;
 class VentaController extends Controller
 {
     /** Metodos de pago disponibles (contado). QR (#10) difiere el cobro al flujo asincrono. */
-    private const METODOS = [Pago::METODO_EFECTIVO, Pago::METODO_TRANSFERENCIA, Pago::METODO_TARJETA, Pago::METODO_QR];
+    private const METODOS = [Pago::METODO_EFECTIVO, Pago::METODO_TARJETA, Pago::METODO_QR];
 
     public function index(Request $request): Response
     {

@@ -21,7 +21,8 @@ use Inertia\Response;
  */
 class MisPagosController extends Controller
 {
-    private const METODOS = [Pago::METODO_EFECTIVO, Pago::METODO_TRANSFERENCIA, Pago::METODO_TARJETA];
+    // El cliente solo paga sus cuotas en linea: tarjeta o QR (el front agrega 'qr'). Sin efectivo/transferencia.
+    private const METODOS = [Pago::METODO_TARJETA];
 
     public function index(Request $request): Response
     {

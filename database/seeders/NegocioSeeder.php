@@ -143,7 +143,7 @@ class NegocioSeeder extends Seeder
 
         $promosVigentes = Promocion::vigente()->get()->keyBy('producto_id');
         $disponible = Producto::pluck('stock', 'id')->toArray();
-        $metodos = [Pago::METODO_EFECTIVO, Pago::METODO_TRANSFERENCIA, Pago::METODO_TARJETA, Pago::METODO_QR];
+        $metodos = [Pago::METODO_EFECTIVO, Pago::METODO_TARJETA, Pago::METODO_QR];
         $creditoAsignado = []; // cliente_id => true (max 1 credito por cliente en la demo)
 
         for ($v = 0; $v < 34; $v++) {
