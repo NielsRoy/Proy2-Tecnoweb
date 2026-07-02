@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Pago;
+use App\Models\Venta;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 
@@ -47,6 +48,25 @@ abstract class Controller
             'monto' => $cuota->monto,
             'fecha' => $cuota->fecha_pago?->format('d/m/Y'),
             'hora' => $cuota->fecha_pago?->format('H:i:s'),
+            'retorno' => $retorno,
+        ]);
+
+        return redirect()->route('pagos.comprobante');
+    }
+
+    /**
+     * Pantalla de "Pedido realizado": tras un checkout del cliente al contado + efectivo (pedido, que
+     * AUN no se cobra) muestra la misma pantalla del comprobante pero con el texto de pedido (paga en
+     * efectivo al recibir). Reusa el flujo del comprobante (flash de sesion -> pagos.comprobante).
+     * `$retorno` = nombre de ruta del boton "Regresar".
+     */
+    protected function comprobantePedido(Venta $venta, string $retorno): RedirectResponse
+    {
+        session()->flash('comprobante', [
+            'tipo' => 'pedido',
+            'concepto' => "Pedido #{$venta->id}",
+            'monto' => $venta->monto_total,
+            'direccion' => $venta->direccion_envio,
             'retorno' => $retorno,
         ]);
 

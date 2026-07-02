@@ -5,13 +5,17 @@ namespace App\Providers;
 use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
 use Illuminate\Auth\Middleware\RedirectIfAuthenticated;
+use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
+use Laravel\Fortify\Contracts\LoginResponse;
+use Laravel\Fortify\Contracts\RegisterResponse;
 use Laravel\Fortify\Features;
 use Laravel\Fortify\Fortify;
 
@@ -24,11 +28,11 @@ class FortifyServiceProvider extends ServiceProvider
     {
         // Destino tras login/registro: la pagina fija /inicio (no el home /dashboard de Fortify).
         $this->app->singleton(
-            \Laravel\Fortify\Contracts\LoginResponse::class,
+            LoginResponse::class,
             \App\Http\Responses\LoginResponse::class,
         );
         $this->app->singleton(
-            \Laravel\Fortify\Contracts\RegisterResponse::class,
+            RegisterResponse::class,
             \App\Http\Responses\RegisterResponse::class,
         );
     }
@@ -40,6 +44,7 @@ class FortifyServiceProvider extends ServiceProvider
     {
         $this->configureActions();
         $this->configureViews();
+        $this->configureNotifications();
         $this->configureRateLimiting();
 
         // Un usuario ya autenticado que entra a /login o /register (middleware "guest")
@@ -83,6 +88,33 @@ class FortifyServiceProvider extends ServiceProvider
             'passwordRules' => Password::defaults()->toPasswordRulesString(),
         ]));
 
+    }
+
+    /**
+     * Personaliza el correo de "restablecer contraseña" para que salga EN ESPANOL (la notificacion
+     * por defecto de Laravel lo arma desde claves en ingles y no hay lang/es.json). Se replica la
+     * construccion de la URL del default (token + email como query) para conservar el subdirectorio
+     * (la URL sale de APP_URL, igual que login).
+     */
+    private function configureNotifications(): void
+    {
+        ResetPassword::toMailUsing(function (object $notifiable, string $token): MailMessage {
+            $url = url(route('password.reset', [
+                'token' => $token,
+                'email' => $notifiable->getEmailForPasswordReset(),
+            ], absolute: false));
+
+            $minutos = config('auth.passwords.'.config('auth.defaults.passwords').'.expire', 60);
+
+            return (new MailMessage)
+                ->subject('Restablece tu contraseña — Tienda D & D')
+                ->greeting('¡Hola!')
+                ->line('Recibiste este correo porque se solicitó restablecer la contraseña de tu cuenta.')
+                ->action('Restablecer contraseña', $url)
+                ->line("Este enlace expirará en {$minutos} minutos.")
+                ->line('Si no solicitaste el cambio, ignora este correo; no se hará ninguna modificación.')
+                ->salutation("Saludos,\nTienda D & D");
+        });
     }
 
     /**

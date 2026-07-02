@@ -181,11 +181,10 @@ class CarritoController extends Controller
         // Compra registrada: vaciar el carrito.
         Carrito::where('cliente_id', $uid)->delete();
 
-        // Pedido (efectivo): mensaje de pedido, sin comprobante (aun no se cobro).
+        // Pedido (efectivo): pantalla de "Pedido realizado" (paga en efectivo al recibir). No es un
+        // comprobante de pago porque aun no se cobro; el admin lo confirma despues.
         if ($esPedido) {
-            $this->toastExito('Pedido realizado correctamente. Los productos llegarán a tu dirección indicada.');
-
-            return redirect()->route('inicio');
+            return $this->comprobantePedido($venta, 'inicio');
         }
 
         // Contado no-QR: se pago al comprar -> comprobante. Credito: solo se registro el plan (toast).

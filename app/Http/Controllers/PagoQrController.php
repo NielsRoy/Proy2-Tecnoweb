@@ -139,7 +139,21 @@ class PagoQrController extends Controller
             return redirect()->route('inicio');
         }
 
+        // Variante "pedido": checkout del cliente al contado + efectivo (aun sin cobrar).
+        if (($data['tipo'] ?? 'pago') === 'pedido') {
+            return Inertia::render('pagos/Comprobante', [
+                'tipo' => 'pedido',
+                'concepto' => $data['concepto'],
+                'pedido' => [
+                    'monto' => $data['monto'],
+                    'direccion' => $data['direccion'] ?? null,
+                ],
+                'retornoUrl' => Url::path($data['retorno']),
+            ]);
+        }
+
         return Inertia::render('pagos/Comprobante', [
+            'tipo' => 'pago',
             'concepto' => $data['concepto'],
             'pago' => [
                 'metodo' => $data['metodo'],
