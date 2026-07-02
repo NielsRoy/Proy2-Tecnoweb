@@ -8,6 +8,7 @@ use App\Http\Controllers\CategoriaController;
 use App\Http\Controllers\CompraController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InventarioController;
+use App\Http\Controllers\LandingController;
 use App\Http\Controllers\MisComprasController;
 use App\Http\Controllers\MisPagosController;
 use App\Http\Controllers\PagoController;
@@ -19,7 +20,8 @@ use App\Http\Controllers\VentaController;
 use App\Http\Controllers\UsuarioController;
 use Illuminate\Support\Facades\Route;
 
-Route::inertia('/', 'Welcome')->name('home');
+// Landing pública comercial (llama a comprar; botones a registro/login). Diseño FIJO, sin auth ni matriz.
+Route::get('/', [LandingController::class, 'index'])->name('home');
 
 // Inicio = TIENDA autoservicio: catalogo + carrito + checkout. De LIBRE ACCESO para TODO usuario
 // autenticado (solo 'auth', sin 'permiso:') -> no va en la matriz ni se desactiva por rol. Es el
