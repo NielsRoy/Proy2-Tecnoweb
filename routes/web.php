@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AccesoController;
 use App\Http\Controllers\BitacoraController;
+use App\Http\Controllers\BuscadorController;
 use App\Http\Controllers\CarritoController;
 use App\Http\Controllers\CategoriaController;
 use App\Http\Controllers\CompraController;
@@ -45,6 +46,9 @@ Route::middleware('auth')->group(function () {
     Route::get('qr-venta/estado', [PagoQrController::class, 'estadoVenta'])->name('pagos.qr-venta.estado');
     // Comprobante ("Pago confirmado") tras un pago NO-QR (datos por flash de sesion).
     Route::get('comprobante', [PagoQrController::class, 'comprobante'])->name('pagos.comprobante');
+
+    // Buscador global (requisito #9): devuelve JSON con sugerencias de acciones permitidas (paso 1).
+    Route::get('buscar', [BuscadorController::class, 'buscar'])->name('buscar');
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {

@@ -29,13 +29,21 @@ class Accion extends Model
         return ['activo' => 'boolean'];
     }
 
-    /** Modulo al que pertenece esta accion. */
+    /**
+     * Modulo al que pertenece esta accion.
+     *
+     * @return BelongsTo<Modulo, $this>
+     */
     public function modulo(): BelongsTo
     {
         return $this->belongsTo(Modulo::class, 'modulo_id');
     }
 
-    /** Roles que tienen habilitada esta accion (la matriz de acceso, columna por accion). */
+    /**
+     * Roles que tienen habilitada esta accion (la matriz de acceso, columna por accion).
+     *
+     * @return BelongsToMany<Rol, $this>
+     */
     public function roles(): BelongsToMany
     {
         return $this->belongsToMany(Rol::class, 'rol_accion', 'accion_id', 'rol_id')
