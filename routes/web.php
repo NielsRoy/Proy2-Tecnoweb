@@ -16,8 +16,8 @@ use App\Http\Controllers\PagoQrController;
 use App\Http\Controllers\ProductoController;
 use App\Http\Controllers\PromocionController;
 use App\Http\Controllers\TiendaController;
-use App\Http\Controllers\VentaController;
 use App\Http\Controllers\UsuarioController;
+use App\Http\Controllers\VentaController;
 use Illuminate\Support\Facades\Route;
 
 // Landing pública comercial (llama a comprar; botones a registro/login). Diseño FIJO, sin auth ni matriz.
@@ -171,6 +171,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Reporte (PDF/CSV) de la lista filtrada. ANTES del comodin {venta} para que no lo capture.
         Route::get('reporte', [VentaController::class, 'reporte'])
             ->middleware('permiso:ventas,reportar')->name('reporte');
+        // Confirmar un pedido (cliente pago al contado+efectivo) -> registrada + cobro efectivo.
+        Route::put('{venta}/confirmar', [VentaController::class, 'confirmar'])
+            ->middleware('permiso:ventas,confirmar')->name('confirmar');
         Route::get('{venta}', [VentaController::class, 'show'])
             ->middleware('permiso:ventas,listar')->name('show');
         Route::delete('{venta}', [VentaController::class, 'destroy'])

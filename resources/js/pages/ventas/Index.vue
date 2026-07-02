@@ -15,7 +15,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import BotonesReporte from '@/components/BotonesReporte.vue';
-import { create, destroy, index, reporte, show } from '@/routes/ventas';
+import { confirmar, create, destroy, index, reporte, show } from '@/routes/ventas';
 
 type VentaItem = {
     id: number;
@@ -52,9 +52,18 @@ const props = defineProps<{
     ventas: Paginado;
     filtros: Filtros;
     puedeCrear: boolean;
+    puedeConfirmar: boolean;
     puedeEliminar: boolean;
     puedeReportar: boolean;
 }>();
+
+// Etiqueta y color del badge de estado de la venta (registrada / pedido / anulada).
+function estadoLabel(estado: string): string {
+    return estado === 'anulada' ? 'Anulada' : estado === 'pedido' ? 'Pedido' : 'Registrada';
+}
+function estadoVariant(estado: string): 'destructive' | 'secondary' | 'outline' {
+    return estado === 'anulada' ? 'destructive' : estado === 'pedido' ? 'secondary' : 'outline';
+}
 
 defineOptions({
     layout: {
@@ -126,6 +135,27 @@ function confirmarAnular(): void {
         },
     });
 }
+
+const ventaAConfirmar = ref<VentaItem | null>(null);
+const confirmando = ref(false);
+
+function confirmarPedido(): void {
+    if (!ventaAConfirmar.value) {
+        return;
+    }
+    router.put(
+        confirmar(ventaAConfirmar.value.id).url,
+        {},
+        {
+            preserveScroll: true,
+            onStart: () => (confirmando.value = true),
+            onFinish: () => {
+                confirmando.value = false;
+                ventaAConfirmar.value = null;
+            },
+        },
+    );
+}
 </script>
 
 <template>
@@ -173,6 +203,7 @@ function confirmarAnular(): void {
                 <Label for="f-estado">Estado</Label>
                 <select id="f-estado" v-model="filtros.estado" :class="selectClass">
                     <option value="">Todos</option>
+                    <option value="pedido">Pedido</option>
                     <option value="registrada">Registrada</option>
                     <option value="anulada">Anulada</option>
                 </select>
@@ -250,14 +281,8 @@ function confirmarAnular(): void {
                             </div>
                         </td>
                         <td class="p-3">
-                            <Badge
-                                :variant="
-                                    v.estado === 'anulada'
-                                        ? 'destructive'
-                                        : 'outline'
-                                "
-                            >
-                                {{ v.estado === 'anulada' ? 'Anulada' : 'Registrada' }}
+                            <Badge :variant="estadoVariant(v.estado)">
+                                {{ estadoLabel(v.estado) }}
                             </Badge>
                         </td>
                         <td class="p-3 text-right">
@@ -266,9 +291,17 @@ function confirmarAnular(): void {
                                     <Link :href="show(v.id)">Ver</Link>
                                 </Button>
                                 <Button
+                                    v-if="puedeConfirmar && v.estado === 'pedido'"
+                                    size="sm"
+                                    @click="ventaAConfirmar = v"
+                                >
+                                    Confirmar venta
+                                </Button>
+                                <Button
                                     v-if="
                                         puedeEliminar &&
-                                        v.estado === 'registrada' &&
+                                        (v.estado === 'registrada' ||
+                                            v.estado === 'pedido') &&
                                         v.estado_pago === 'pendiente'
                                     "
                                     variant="destructive"
@@ -344,6 +377,31 @@ function confirmarAnular(): void {
                     @click="confirmarAnular"
                 >
                     Anular
+                </Button>
+            </DialogFooter>
+        </DialogContent>
+    </Dialog>
+
+    <Dialog
+        :open="ventaAConfirmar !== null"
+        @update:open="(v) => !v && (ventaAConfirmar = null)"
+    >
+        <DialogContent>
+            <DialogHeader class="space-y-3">
+                <DialogTitle>¿Confirmar pedido?</DialogTitle>
+                <DialogDescription>
+                    El pedido <strong>#{{ ventaAConfirmar?.id }}</strong> pasará a
+                    <strong>Registrada</strong> y se cobrará en efectivo (Bs
+                    {{ ventaAConfirmar?.monto_total }}). El stock ya fue descontado al
+                    hacer el pedido.
+                </DialogDescription>
+            </DialogHeader>
+            <DialogFooter class="gap-2">
+                <DialogClose as-child>
+                    <Button variant="secondary">Cancelar</Button>
+                </DialogClose>
+                <Button :disabled="confirmando" @click="confirmarPedido">
+                    Confirmar venta
                 </Button>
             </DialogFooter>
         </DialogContent>

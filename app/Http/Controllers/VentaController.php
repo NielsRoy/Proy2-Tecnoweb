@@ -61,6 +61,7 @@ class VentaController extends Controller
             'ventas' => $ventas,
             'filtros' => $filtros,
             'puedeCrear' => $request->user()->tienePermiso('ventas', 'registrar'),
+            'puedeConfirmar' => $request->user()->tienePermiso('ventas', 'confirmar'),
             'puedeEliminar' => $request->user()->tienePermiso('ventas', 'eliminar'),
             'puedeReportar' => $request->user()->tienePermiso('ventas', 'reportar'),
         ]);
@@ -83,7 +84,11 @@ class VentaController extends Controller
             number_format((float) $v->monto_total, 2, '.', ''),
             ucfirst($v->tipo_pago),
             $v->estado_pago === Venta::PAGO_PAGADA ? 'Pagada' : 'Pendiente',
-            $v->estado === Venta::ESTADO_ANULADA ? 'Anulada' : 'Registrada',
+            match ($v->estado) {
+                Venta::ESTADO_ANULADA => 'Anulada',
+                Venta::ESTADO_PEDIDO => 'Pedido',
+                default => 'Registrada',
+            },
         ])->all();
         $sumaTotal = number_format((float) $ventas->sum('monto_total'), 2, '.', '');
 
@@ -316,6 +321,35 @@ class VentaController extends Controller
         });
 
         $this->toastExito('Venta anulada y stock devuelto.');
+
+        return redirect()->route('ventas.index');
+    }
+
+    /**
+     * CONFIRMAR un pedido (venta que el cliente hizo al contado + efectivo desde la tienda): pasa de
+     * 'pedido' a 'registrada' y cobra la venta en efectivo (crea la cuota #1 y la salda -> 'pagada').
+     * El stock ya se desconto al crear el pedido. Ruta con permiso:ventas,confirmar.
+     */
+    public function confirmar(Venta $venta): RedirectResponse
+    {
+        abort_unless($venta->estado === Venta::ESTADO_PEDIDO, 422, 'La venta no es un pedido.');
+
+        DB::transaction(function () use ($venta) {
+            $cuota = Pago::create([
+                'venta_id' => $venta->id,
+                'numero_cuota' => 1,
+                'monto' => $venta->monto_total,
+                'fecha_vencimiento' => $venta->fecha_venta,
+                'estado' => Pago::ESTADO_PENDIENTE,
+            ]);
+            Pago::saldar($cuota, Pago::METODO_EFECTIVO); // deja la venta 'pagada'
+
+            $venta->update(['estado' => Venta::ESTADO_REGISTRADA]);
+
+            Bitacora::registrar('modificar', "Confirmó el pedido #{$venta->id} (cobro en efectivo)", 'ventas');
+        });
+
+        $this->toastExito('Pedido confirmado y cobrado en efectivo.');
 
         return redirect()->route('ventas.index');
     }

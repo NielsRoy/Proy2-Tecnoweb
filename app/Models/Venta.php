@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
 /**
  * Venta (CU4) — cabecera. cliente_id es un users con rol Cliente (validado en app).
@@ -13,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  *
  * @property int $id
  * @property int $cliente_id
- * @property \Illuminate\Support\Carbon $fecha_venta
+ * @property Carbon $fecha_venta
  * @property string $direccion_envio
  * @property string $monto_total
  * @property string $tipo_pago
@@ -30,6 +31,10 @@ class Venta extends Model
     public const ESTADO_REGISTRADA = 'registrada';
 
     public const ESTADO_ANULADA = 'anulada';
+
+    // Pedido del cliente (checkout al contado + efectivo): descuenta stock pero AUN no se cobra;
+    // el admin lo confirma (-> 'registrada' + cobro en efectivo) o lo anula.
+    public const ESTADO_PEDIDO = 'pedido';
 
     // tipo_pago
     public const TIPO_CONTADO = 'contado';

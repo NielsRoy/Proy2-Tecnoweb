@@ -28,7 +28,7 @@ class RolAccionSeeder extends Seeder
                 'dashboard' => ['ver', 'graf_productos', 'graf_ingresos', 'graf_tipo_pago', 'graf_clientes', 'graf_stock', 'graf_promociones'],
                 'productos' => ['listar', 'reportar'],
                 'categorias' => ['listar'],
-                'ventas' => ['listar', 'registrar', 'reportar'],
+                'ventas' => ['listar', 'registrar', 'confirmar', 'reportar'],
                 'inventarios' => ['listar', 'reportar'],
                 'promociones' => ['listar', 'reportar'],
                 'pagos' => ['listar', 'registrar', 'reportar'],

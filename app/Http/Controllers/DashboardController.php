@@ -65,7 +65,7 @@ class DashboardController extends Controller
         $rows = DB::table('detalle_venta as dv')
             ->join('venta as v', 'v.id', '=', 'dv.venta_id')
             ->join('producto as p', 'p.id', '=', 'dv.producto_id')
-            ->where('v.estado', '!=', Venta::ESTADO_ANULADA)
+            ->where('v.estado', Venta::ESTADO_REGISTRADA)
             ->groupBy('p.id', 'p.nombre')
             ->orderByDesc(DB::raw('SUM(dv.cantidad)'))
             ->limit(10)
@@ -84,7 +84,7 @@ class DashboardController extends Controller
         $desde = now()->startOfMonth()->subMonths(11);
 
         $totales = DB::table('venta')
-            ->where('estado', '!=', Venta::ESTADO_ANULADA)
+            ->where('estado', Venta::ESTADO_REGISTRADA)
             ->whereDate('fecha_venta', '>=', $desde->toDateString())
             ->selectRaw("to_char(fecha_venta, 'YYYY-MM') as mes, SUM(monto_total) as total")
             ->groupBy('mes')
@@ -127,7 +127,7 @@ class DashboardController extends Controller
     private function ventasPorTipoPago(): array
     {
         $rows = DB::table('venta')
-            ->where('estado', '!=', Venta::ESTADO_ANULADA)
+            ->where('estado', Venta::ESTADO_REGISTRADA)
             ->groupBy('tipo_pago')
             ->get(['tipo_pago', DB::raw('COUNT(*) as total')]);
 
@@ -145,7 +145,7 @@ class DashboardController extends Controller
     {
         $rows = DB::table('venta as v')
             ->join('users as u', 'u.id', '=', 'v.cliente_id')
-            ->where('v.estado', '!=', Venta::ESTADO_ANULADA)
+            ->where('v.estado', Venta::ESTADO_REGISTRADA)
             ->groupBy('u.id', 'u.name')
             ->orderByDesc(DB::raw('SUM(v.monto_total)'))
             ->limit(10)
@@ -198,7 +198,7 @@ class DashboardController extends Controller
         $rows = DB::table('detalle_venta as dv')
             ->join('venta as v', 'v.id', '=', 'dv.venta_id')
             ->join('promocion as pr', 'pr.id', '=', 'dv.promocion_id')
-            ->where('v.estado', '!=', Venta::ESTADO_ANULADA)
+            ->where('v.estado', Venta::ESTADO_REGISTRADA)
             ->groupBy('pr.id', 'pr.nombre')
             ->orderByDesc(DB::raw('SUM(dv.subtotal)'))
             ->limit(10)

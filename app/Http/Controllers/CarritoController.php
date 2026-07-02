@@ -161,6 +161,10 @@ class CarritoController extends Controller
             return redirect()->route('pagos.qr-venta');
         }
 
+        // Pedido: contado + efectivo desde la tienda -> la venta nace 'pedido' (descuenta stock pero
+        // NO se cobra al instante; el admin la confirma). No hay comprobante de pago.
+        $esPedido = $esContado && ($datos['metodo'] ?? null) === Pago::METODO_EFECTIVO;
+
         // Resto (contado por otros medios o credito): RegistrarVenta valida stock/promo/credito/bloqueo
         // y lanza ValidationException si algo falla.
         $venta = $registrar->ejecutar([
@@ -170,11 +174,19 @@ class CarritoController extends Controller
             'tipo_pago' => $datos['tipo_pago'],
             'metodo' => $datos['metodo'] ?? null,
             'numero_cuotas' => $datos['numero_cuotas'] ?? null,
+            'es_pedido' => $esPedido,
             'lineas' => $lineas,
         ]);
 
         // Compra registrada: vaciar el carrito.
         Carrito::where('cliente_id', $uid)->delete();
+
+        // Pedido (efectivo): mensaje de pedido, sin comprobante (aun no se cobro).
+        if ($esPedido) {
+            $this->toastExito('Pedido realizado correctamente. Los productos llegarán a tu dirección indicada.');
+
+            return redirect()->route('inicio');
+        }
 
         // Contado no-QR: se pago al comprar -> comprobante. Credito: solo se registro el plan (toast).
         if ($datos['tipo_pago'] === Venta::TIPO_CONTADO) {

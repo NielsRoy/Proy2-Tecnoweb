@@ -47,7 +47,7 @@ class ModuloSeeder extends Seeder
             ['clave' => 'productos', 'nombre' => 'Productos', 'icono' => 'Package', 'ruta' => 'productos.index', 'orden' => 3, 'acciones' => $crud + $reportar],
             ['clave' => 'categorias', 'nombre' => 'Categorías', 'icono' => 'Tags', 'ruta' => 'categorias.index', 'orden' => 4, 'acciones' => $crud],
             ['clave' => 'compras', 'nombre' => 'Compras', 'icono' => 'ShoppingCart', 'ruta' => 'compras.index', 'orden' => 5, 'acciones' => ['listar' => 'Listar', 'registrar' => 'Registrar', 'eliminar' => 'Anular'] + $reportar],
-            ['clave' => 'ventas', 'nombre' => 'Ventas', 'icono' => 'Receipt', 'ruta' => 'ventas.index', 'orden' => 6, 'acciones' => ['listar' => 'Listar', 'registrar' => 'Registrar', 'eliminar' => 'Anular'] + $reportar],
+            ['clave' => 'ventas', 'nombre' => 'Ventas', 'icono' => 'Receipt', 'ruta' => 'ventas.index', 'orden' => 6, 'acciones' => ['listar' => 'Listar', 'registrar' => 'Registrar', 'confirmar' => 'Confirmar pedido', 'eliminar' => 'Anular'] + $reportar],
             ['clave' => 'inventarios', 'nombre' => 'Inventarios', 'icono' => 'Boxes', 'ruta' => 'inventarios.index', 'orden' => 7, 'acciones' => ['listar' => 'Listar', 'registrar' => 'Registrar'] + $reportar],
             ['clave' => 'promociones', 'nombre' => 'Promociones', 'icono' => 'BadgePercent', 'ruta' => 'promociones.index', 'orden' => 8, 'acciones' => $crud + $reportar],
             ['clave' => 'pagos', 'nombre' => 'Pagos', 'icono' => 'CreditCard', 'ruta' => 'pagos.index', 'orden' => 9, 'acciones' => ['listar' => 'Listar', 'registrar' => 'Registrar'] + $reportar],

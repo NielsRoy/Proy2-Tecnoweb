@@ -151,10 +151,18 @@ function irA(url: string | null): void {
                                 :variant="
                                     c.estado === 'anulada'
                                         ? 'destructive'
-                                        : 'outline'
+                                        : c.estado === 'pedido'
+                                          ? 'secondary'
+                                          : 'outline'
                                 "
                             >
-                                {{ c.estado === 'anulada' ? 'Anulada' : 'Registrada' }}
+                                {{
+                                    c.estado === 'anulada'
+                                        ? 'Anulada'
+                                        : c.estado === 'pedido'
+                                          ? 'Pedido'
+                                          : 'Registrada'
+                                }}
                             </Badge>
                         </td>
                         <td class="p-3 text-right">

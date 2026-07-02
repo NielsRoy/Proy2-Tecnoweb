@@ -60,8 +60,22 @@ defineOptions({
                 </p>
             </div>
             <div class="flex flex-col items-end gap-1">
-                <Badge :variant="venta.estado === 'anulada' ? 'destructive' : 'outline'">
-                    {{ venta.estado === 'anulada' ? 'Anulada' : 'Registrada' }}
+                <Badge
+                    :variant="
+                        venta.estado === 'anulada'
+                            ? 'destructive'
+                            : venta.estado === 'pedido'
+                              ? 'secondary'
+                              : 'outline'
+                    "
+                >
+                    {{
+                        venta.estado === 'anulada'
+                            ? 'Anulada'
+                            : venta.estado === 'pedido'
+                              ? 'Pedido'
+                              : 'Registrada'
+                    }}
                 </Badge>
                 <Badge :variant="venta.estado_pago === 'pagada' ? 'default' : 'secondary'">
                     {{ venta.tipo_pago }} ·

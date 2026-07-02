@@ -27,7 +27,7 @@ use Illuminate\Validation\ValidationException;
 class RegistrarVenta
 {
     /**
-     * @param  array{cliente_id:int, fecha_venta:string, direccion_envio:?string, tipo_pago:string, metodo:?string, numero_cuotas:?int, lineas:array<int, array{producto_id:int, cantidad:int}>}  $datos
+     * @param  array{cliente_id:int, fecha_venta:string, direccion_envio:?string, tipo_pago:string, metodo:?string, numero_cuotas:?int, es_pedido?:bool, lineas:array<int, array{producto_id:int, cantidad:int}>}  $datos
      */
     public function ejecutar(array $datos): Venta
     {
@@ -35,6 +35,9 @@ class RegistrarVenta
         [$lineas, $base] = $this->resolverLineas($datos['lineas']);
 
         $esCredito = $datos['tipo_pago'] === Venta::TIPO_CREDITO;
+        // Pedido = checkout del cliente al contado + efectivo: la venta nace 'pedido' (aun sin cobrar,
+        // el admin la confirma). Solo aplica a contado; el credito nunca es pedido.
+        $esPedido = ($datos['es_pedido'] ?? false) && ! $esCredito;
         $numeroCuotas = 1;
         $montoTotal = $base;
 
@@ -72,7 +75,7 @@ class RegistrarVenta
         }
 
         // 3) Persistir todo en una transaccion.
-        return DB::transaction(function () use ($datos, $lineas, $montoTotal, $esCredito, $numeroCuotas) {
+        return DB::transaction(function () use ($datos, $lineas, $montoTotal, $esCredito, $esPedido, $numeroCuotas) {
             $venta = Venta::create([
                 'cliente_id' => $datos['cliente_id'],
                 'fecha_venta' => $datos['fecha_venta'],
@@ -81,7 +84,7 @@ class RegistrarVenta
                 'tipo_pago' => $datos['tipo_pago'],
                 'numero_cuotas' => $numeroCuotas,
                 'estado_pago' => Venta::PAGO_PENDIENTE, // se vuelve 'pagada' al saldar (contado)
-                'estado' => Venta::ESTADO_REGISTRADA,
+                'estado' => $esPedido ? Venta::ESTADO_PEDIDO : Venta::ESTADO_REGISTRADA,
             ]);
 
             foreach ($lineas as $linea) {
@@ -114,6 +117,9 @@ class RegistrarVenta
                         'estado' => Pago::ESTADO_PENDIENTE,
                     ]);
                 }
+            } elseif ($esPedido) {
+                // Pedido (checkout efectivo): NO se crea cuota ni se salda nada; queda pendiente de que
+                // el admin lo confirme (ahi se crea la cuota #1 y se salda en efectivo). El stock ya salio.
             } else {
                 // Contado: una unica cuota que se salda ya con el metodo elegido (-> venta 'pagada').
                 // El contado por QR NO llega aqui hasta que el pago esta confirmado: la venta se
@@ -131,7 +137,9 @@ class RegistrarVenta
 
             Bitacora::registrar(
                 'crear',
-                "Registró la venta #{$venta->id} ({$venta->tipo_pago}, Bs {$montoTotal})",
+                $esPedido
+                    ? "Registró el pedido #{$venta->id} (contado efectivo, Bs {$montoTotal})"
+                    : "Registró la venta #{$venta->id} ({$venta->tipo_pago}, Bs {$montoTotal})",
                 'ventas',
             );
 
