@@ -1,2 +1,8 @@
 *
 !.gitignore
+!categorias/
+!categorias/**
+!landing/
+!landing/**
+!productos/
+!productos/**
