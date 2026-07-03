@@ -1,3 +1,12 @@
+# Permite cargar módulos ES y fuentes cuando el navegador (p. ej. Firefox con el
+# certificado autofirmado del server) trata la conexión como un origen distinto y
+# exige CORS. Son assets públicos y estáticos → Access-Control-Allow-Origin: * es seguro.
+<IfModule mod_headers.c>
+    <FilesMatch "\.(js|mjs|css|woff2?|ttf|otf|eot|json|svg)$">
+        Header always set Access-Control-Allow-Origin "*"
+    </FilesMatch>
+</IfModule>
+
 <IfModule mod_rewrite.c>
     <IfModule mod_negotiation.c>
         Options -MultiViews -Indexes
